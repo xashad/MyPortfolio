@@ -160,6 +160,41 @@ figure.shot figcaption b{color:var(--ink);font-weight:600}
 #lb .cap{position:absolute;bottom:26px;left:0;right:0;text-align:center;color:#cdd8f0;font-size:.95rem;padding:0 20px}
 #lb .x{position:absolute;top:22px;right:26px;color:#fff;font-size:1.6rem;cursor:pointer;opacity:.8}
 
+/* PASSCODE GATE */
+#gate{position:fixed;inset:0;z-index:300;background:rgba(3,6,14,.85);backdrop-filter:blur(9px);
+  display:none;align-items:center;justify-content:center;padding:24px}
+#gate.open{display:flex}
+.gate-box{position:relative;width:min(360px,92vw);background:linear-gradient(160deg,#0f1626,#0a0e1a);
+  border:1px solid var(--line);border-radius:20px;padding:30px 26px 26px;text-align:center;
+  box-shadow:0 30px 90px rgba(0,0,0,.65);animation:gatePop .45s cubic-bezier(.2,1.25,.3,1)}
+.gate-box.shake{animation:gateShake .5s}
+.gate-box.denied{border-color:#fb7185;box-shadow:0 0 60px -10px #fb7185}
+@keyframes gatePop{from{opacity:0;transform:scale(.82) translateY(18px)}to{opacity:1;transform:none}}
+@keyframes gateShake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}
+  30%,50%,70%{transform:translateX(-9px)}40%,60%{transform:translateX(9px)}}
+.gate-lock{font-size:2.1rem;margin-bottom:6px;animation:lockSwing 2.4s ease-in-out infinite}
+@keyframes lockSwing{0%,100%{transform:rotate(0)}25%{transform:rotate(-7deg)}75%{transform:rotate(7deg)}}
+.gate-box h3{font-family:'Space Grotesk';font-size:1.18rem;letter-spacing:.02em;margin-bottom:4px}
+.gate-box .ghint{color:var(--muted);font-size:.8rem;margin-bottom:18px}
+.gate-display{height:56px;border-radius:12px;border:1px solid var(--line);background:#070b16;
+  display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';
+  font-size:1.9rem;letter-spacing:.45em;text-indent:.45em;color:var(--accent);margin-bottom:16px;
+  text-shadow:0 0 14px color-mix(in srgb,var(--accent) 60%,transparent)}
+.gate-display.empty{color:var(--muted);text-shadow:none;opacity:.5}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.key{padding:15px 0;border-radius:12px;border:1px solid var(--line);background:var(--surface2);
+  color:var(--ink);font-size:1.2rem;font-family:'Space Grotesk';cursor:pointer;transition:.12s;user-select:none}
+.key:hover{background:color-mix(in srgb,var(--accent) 22%,transparent);border-color:var(--accent)}
+.key:active{transform:scale(.93)}
+.key.enter{background:linear-gradient(115deg,var(--accent),var(--accent2));color:#fff;border:none}
+.gate-msg{margin-top:15px;min-height:1.1em;font-size:.85rem}
+.gate-msg.deny{color:#fb7185;font-weight:600;white-space:pre-line;line-height:1.55;
+  animation:flashIn .25s}
+.gate-msg.grant{color:var(--good);font-weight:700;letter-spacing:.12em;animation:flashIn .25s}
+@keyframes flashIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1}}
+.gate-cancel{margin-top:14px;color:var(--muted);font-size:.78rem;cursor:pointer;background:none;border:none}
+.gate-cancel:hover{color:var(--ink)}
+
 /* TIMELINE */
 .timeline{position:relative;padding-left:30px}
 .timeline::before{content:"";position:absolute;left:7px;top:6px;bottom:6px;width:2px;background:var(--line)}
@@ -634,6 +669,32 @@ footer{text-align:center;padding:30px 0;color:var(--muted);font-size:.85rem;bord
 <!-- Lightbox -->
 <div id="lb"><span class="x">✕</span><img id="lbimg" src="" alt=""><div class="cap" id="lbcap"></div></div>
 
+<!-- Passcode gate -->
+<div id="gate">
+  <div class="gate-box" id="gateBox">
+    <div class="gate-lock" id="gateLock">🔒</div>
+    <h3>Restricted — Enter Passcode</h3>
+    <div class="ghint">Authorization required to access résumé</div>
+    <div class="gate-display empty" id="gateDisplay">— — —</div>
+    <div class="keypad">
+      <button class="key" data-k="1">1</button>
+      <button class="key" data-k="2">2</button>
+      <button class="key" data-k="3">3</button>
+      <button class="key" data-k="4">4</button>
+      <button class="key" data-k="5">5</button>
+      <button class="key" data-k="6">6</button>
+      <button class="key" data-k="7">7</button>
+      <button class="key" data-k="8">8</button>
+      <button class="key" data-k="9">9</button>
+      <button class="key" data-k="del">⌫</button>
+      <button class="key" data-k="0">0</button>
+      <button class="key enter" data-k="ok">⏎</button>
+    </div>
+    <div class="gate-msg" id="gateMsg"></div>
+    <button class="gate-cancel" id="gateCancel">Cancel</button>
+  </div>
+</div>
+
 <script>
 /* ---------- Year ---------- */
 document.getElementById('yr').textContent = new Date().getFullYear();
@@ -717,6 +778,65 @@ document.querySelectorAll('figure.shot').forEach(f=>f.addEventListener('click',(
 }));
 lb.addEventListener('click',()=>lb.classList.remove('open'));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')lb.classList.remove('open');});
+
+/* ---------- Passcode gate for résumé ---------- */
+const PASSCODE="404";
+const gate=document.getElementById('gate'),gateBox=document.getElementById('gateBox'),
+      gateDisplay=document.getElementById('gateDisplay'),gateMsg=document.getElementById('gateMsg'),
+      gateLock=document.getElementById('gateLock');
+let gateCode="",gateTarget="",gateLocked=false;
+
+function renderGate(){
+  if(gateCode){gateDisplay.textContent=gateCode;gateDisplay.classList.remove('empty');}
+  else{gateDisplay.textContent="— — —";gateDisplay.classList.add('empty');}
+}
+function openGate(url){
+  gateTarget=url;gateCode="";gateLocked=false;gateMsg.textContent="";gateMsg.className="gate-msg";
+  gateBox.classList.remove('denied','shake');gateLock.textContent="🔒";renderGate();
+  gate.classList.add('open');
+}
+function closeGate(){gate.classList.remove('open');}
+
+function gateInput(k){
+  if(gateLocked)return;
+  if(k==='del'){gateCode=gateCode.slice(0,-1);renderGate();return;}
+  if(k==='ok'){checkGate();return;}
+  if(gateCode.length>=6)return;
+  gateCode+=k;renderGate();
+  if(gateCode.length>=PASSCODE.length+2)checkGate(); // auto-check if clearly too long
+}
+function checkGate(){
+  if(gateCode===PASSCODE){
+    gateLocked=true;gateLock.textContent="🔓";
+    gateMsg.className="gate-msg grant";gateMsg.textContent="ACCESS GRANTED";
+    setTimeout(()=>{window.open(gateTarget,'_blank');closeGate();},850);
+  }else{
+    // log the failed attempt (feels real; also useful in console)
+    const n=(+(localStorage.getItem('gateFails')||0))+1;localStorage.setItem('gateFails',n);
+    console.warn(`[SECURITY] Unauthorized résumé access attempt #${n} — code "${gateCode}" rejected.`);
+    gateBox.classList.add('denied','shake');gateLock.textContent="⛔";
+    gateMsg.className="gate-msg deny";
+    gateMsg.textContent="ACCESS DENIED\n\nPotential intruder detected.\nThis attempt has been logged.";
+    gateCode="";renderGate();
+    setTimeout(()=>gateBox.classList.remove('shake'),550);
+  }
+}
+/* intercept all résumé (PDF) links */
+document.querySelectorAll('a[href$=".pdf"]').forEach(a=>a.addEventListener('click',e=>{
+  e.preventDefault();openGate(a.getAttribute('href'));
+}));
+/* keypad buttons */
+document.querySelectorAll('.keypad .key').forEach(b=>b.addEventListener('click',()=>gateInput(b.dataset.k)));
+document.getElementById('gateCancel').addEventListener('click',closeGate);
+gate.addEventListener('click',e=>{if(e.target===gate)closeGate();});
+/* physical keyboard support */
+document.addEventListener('keydown',e=>{
+  if(!gate.classList.contains('open'))return;
+  if(e.key>='0'&&e.key<='9')gateInput(e.key);
+  else if(e.key==='Backspace'){e.preventDefault();gateInput('del');}
+  else if(e.key==='Enter')gateInput('ok');
+  else if(e.key==='Escape')closeGate();
+});
 
 /* ---------- Particle network background ---------- */
 const cv=document.getElementById('bgcanvas'),cx=cv.getContext('2d');
