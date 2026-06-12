@@ -234,6 +234,9 @@ figure.shot figcaption b{color:var(--ink);font-weight:600}
 @keyframes flashIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1}}
 .gate-cancel{margin-top:14px;color:var(--muted);font-size:.78rem;cursor:pointer;background:none;border:none}
 .gate-cancel:hover{color:var(--ink)}
+.gate-log{margin-top:9px;min-height:1.1em;font-family:'Consolas','Courier New',monospace;
+  font-size:.73rem;color:#fb7185;letter-spacing:.02em;text-align:center}
+.gate-log:not(:empty)::after{content:'▋';margin-left:1px;animation:blink 1s steps(1) infinite}
 
 /* TIMELINE */
 .timeline{position:relative;padding-left:30px}
@@ -732,6 +735,7 @@ footer{text-align:center;padding:30px 0;color:var(--muted);font-size:.85rem;bord
       <button class="key enter" data-k="ok">⏎</button>
     </div>
     <div class="gate-msg" id="gateMsg"></div>
+    <div class="gate-log" id="gateLog"></div>
     <button class="gate-cancel" id="gateCancel">Cancel</button>
   </div>
 </div>
@@ -886,8 +890,17 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')lb.classList.remove(
 const PASSCODE="404";
 const gate=document.getElementById('gate'),gateBox=document.getElementById('gateBox'),
       gateDisplay=document.getElementById('gateDisplay'),gateMsg=document.getElementById('gateMsg'),
-      gateLock=document.getElementById('gateLock');
-let gateCode="",gateTarget="",gateLocked=false;
+      gateLock=document.getElementById('gateLock'),gateLog=document.getElementById('gateLog');
+let gateCode="",gateTarget="",gateLocked=false,logTimer=null;
+
+function typeLog(text){
+  clearTimeout(logTimer);gateLog.textContent="";
+  let i=0;
+  (function step(){
+    if(i<=text.length){gateLog.textContent=text.slice(0,i++);logTimer=setTimeout(step,30);}
+  })();
+}
+function clearLog(){clearTimeout(logTimer);gateLog.textContent="";}
 
 function renderGate(){
   if(gateCode){gateDisplay.textContent=gateCode;gateDisplay.classList.remove('empty');}
@@ -895,7 +908,7 @@ function renderGate(){
 }
 function openGate(url){
   gateTarget=url;gateCode="";gateLocked=false;gateMsg.textContent="";gateMsg.className="gate-msg";
-  gateBox.classList.remove('denied','shake');gateLock.textContent="🔒";renderGate();
+  gateBox.classList.remove('denied','shake');gateLock.textContent="🔒";renderGate();clearLog();
   gate.classList.add('open');
 }
 function closeGate(){gate.classList.remove('open');}
@@ -911,7 +924,7 @@ function gateInput(k){
 function checkGate(){
   if(gateCode===PASSCODE){
     gateLocked=true;gateLock.textContent="🔓";
-    gateMsg.className="gate-msg grant";gateMsg.textContent="ACCESS GRANTED";
+    gateMsg.className="gate-msg grant";gateMsg.textContent="ACCESS GRANTED";clearLog();
     setTimeout(()=>{window.open(gateTarget,'_blank');closeGate();},850);
   }else{
     // log the failed attempt (feels real; also useful in console)
@@ -920,6 +933,7 @@ function checkGate(){
     gateBox.classList.add('denied','shake');gateLock.textContent="⛔";
     gateMsg.className="gate-msg deny";
     gateMsg.textContent="ACCESS DENIED\n\nPotential intruder detected.\nThis attempt has been logged.";
+    typeLog(`⚠ Logging IP & device… attempt #${n} recorded`);
     gateCode="";renderGate();
     setTimeout(()=>gateBox.classList.remove('shake'),550);
   }
