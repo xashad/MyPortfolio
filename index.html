@@ -160,8 +160,6 @@ nav.scrolled{border-bottom:1px solid var(--line)}
 .sandbox-grid figure.shot figcaption{padding:8px 10px;font-size:.72rem;line-height:1.35}
 
 /* UNIFORM CARD HEIGHT + VIEW MORE */
-.proj{min-height:430px}
-.proj.clamped{max-height:430px}
 .proj.has-vm{padding-bottom:58px}
 .viewmore{position:absolute;left:0;right:0;bottom:0;height:64px;border:none;cursor:pointer;
   background:linear-gradient(to bottom,transparent,var(--bg2) 62%);color:var(--accent);
@@ -784,6 +782,7 @@ filters.forEach(f=>f.onclick=()=>{
     p.style.display=show?'flex':'none';
     if(show){p.style.animation='none';p.offsetHeight;p.style.animation='pop .5s';}
   });
+  setupUniformCards();
 });
 /* spotlight follow */
 projs.forEach(p=>p.addEventListener('mousemove',e=>{
@@ -793,23 +792,43 @@ projs.forEach(p=>p.addEventListener('mousemove',e=>{
 }));
 const st=document.createElement('style');st.textContent='@keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}';document.head.appendChild(st);
 
-/* ---------- Uniform card height: clamp tall cards with "View more" ---------- */
-document.querySelectorAll('.projects .proj').forEach(card=>{
-  if(card.scrollHeight>480){
-    card.classList.add('clamped','has-vm');
-    const btn=document.createElement('button');
-    btn.type='button';btn.className='viewmore';
-    btn.innerHTML='View more <span class="vmc">▾</span>';
-    card.appendChild(btn);
-    btn.addEventListener('click',e=>{
-      e.stopPropagation();
-      const exp=card.classList.toggle('expanded');
-      card.classList.toggle('clamped',!exp);
-      btn.innerHTML=exp?'View less <span class="vmc">▴</span>':'View more <span class="vmc">▾</span>';
-      if(!exp)card.scrollIntoView({behavior:'smooth',block:'nearest'});
-    });
-  }
-});
+/* ---------- Uniform card height: clamp the tallest card(s) to match the rest ---------- */
+function setupUniformCards(){
+  const grid=document.getElementById('projGrid');
+  if(!grid)return;
+  // measure in natural (non-stretched) mode
+  grid.style.alignItems='start';
+  const all=[...grid.querySelectorAll('.proj')];
+  all.forEach(c=>{
+    c.classList.remove('clamped','has-vm','expanded');
+    c.style.maxHeight='';
+    const old=c.querySelector('.viewmore'); if(old)old.remove();
+  });
+  const vis=all.filter(c=>getComputedStyle(c).display!=='none');
+  if(vis.length<2){return;}
+  const hs=vis.map(c=>c.scrollHeight);
+  const target=[...hs].sort((a,b)=>b-a)[1]; // height of the 2nd-tallest = the uniform target
+  vis.forEach((c,i)=>{
+    if(hs[i]>target+20){                      // only the outlier(s) (e.g. Lagani) get clamped
+      c.style.maxHeight=target+'px';
+      c.classList.add('clamped','has-vm');
+      const btn=document.createElement('button');
+      btn.type='button';btn.className='viewmore';
+      btn.innerHTML='View more <span class="vmc">▾</span>';
+      c.appendChild(btn);
+      btn.addEventListener('click',e=>{
+        e.stopPropagation();
+        const exp=c.classList.toggle('expanded');
+        if(exp){c.style.maxHeight='';c.classList.remove('clamped');btn.innerHTML='View less <span class="vmc">▴</span>';}
+        else{c.style.maxHeight=target+'px';c.classList.add('clamped');btn.innerHTML='View more <span class="vmc">▾</span>';c.scrollIntoView({behavior:'smooth',block:'nearest'});}
+      });
+    }
+  });
+  // let each grid row equalize to its (now-capped) tallest card
+  grid.style.alignItems='stretch';
+}
+window.addEventListener('load',setupUniformCards);
+let _uniT;window.addEventListener('resize',()=>{clearTimeout(_uniT);_uniT=setTimeout(setupUniformCards,180);});
 
 /* ---------- Sandbox toggle (in-card charts) ---------- */
 document.querySelectorAll('.sandbox-toggle').forEach(b=>b.addEventListener('click',()=>{
