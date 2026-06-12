@@ -283,7 +283,7 @@ footer{text-align:center;padding:30px 0;color:var(--muted);font-size:.85rem;bord
   <p class="sub">MSc Artificial Intelligence @ Milano-Bicocca. I build <strong style="color:var(--ink)">computer-vision &amp; deep-learning</strong> systems with <strong style="color:var(--ink)">explainability at the core</strong> — from a NEPSE stock-risk platform to fruit-quality inspection and gesture-controlled interfaces.</p>
   <div class="cta">
     <a class="btn primary" href="#projects">View Projects →</a>
-    <a class="btn" href="Mohammad_Ashad_Khan_Resume.pdf" target="_blank">📄 Résumé (PDF)</a>
+    <a class="btn" href="Mohammad_Ashad_Khan_Resume.pdf" target="_blank">📄 Resume (PDF)</a>
     <a class="btn" href="https://github.com/xashad" target="_blank">GitHub</a>
   </div>
   <div class="stats">
@@ -480,7 +480,7 @@ footer{text-align:center;padding:30px 0;color:var(--muted);font-size:.85rem;bord
       <h3>Resume &amp; Job Match Scorer</h3>
       <div class="tagline">Semantic job matching with explainable AI</div>
       <ul>
-        <li>SBERT semantic similarity between résumés and job descriptions</li>
+        <li>SBERT semantic similarity between resumes and job descriptions</li>
         <li>LIME explanations surface <em>which skills</em> drove each match score</li>
         <li>Neo4j skills knowledge graph for structured reasoning</li>
       </ul>
@@ -657,7 +657,7 @@ footer{text-align:center;padding:30px 0;color:var(--muted);font-size:.85rem;bord
       <a class="btn primary" href="mailto:ashad.ak786@gmail.com">✉️ ashad.ak786@gmail.com</a>
       <a class="btn" href="https://linkedin.com/in/xashad" target="_blank">in LinkedIn</a>
       <a class="btn" href="https://github.com/xashad" target="_blank">GitHub</a>
-      <a class="btn" href="Mohammad_Ashad_Khan_Resume.pdf" target="_blank">📄 Résumé (PDF)</a>
+      <a class="btn" href="Mohammad_Ashad_Khan_Resume.pdf" target="_blank">📄 Resume (PDF)</a>
     </div>
   </div>
 </section>
@@ -674,7 +674,7 @@ footer{text-align:center;padding:30px 0;color:var(--muted);font-size:.85rem;bord
   <div class="gate-box" id="gateBox">
     <div class="gate-lock" id="gateLock">🔒</div>
     <h3>Enter a Passcode</h3>
-    <div class="ghint">Authorization required to access résumé</div>
+    <div class="ghint">Authorization required to access resume</div>
     <div class="gate-display empty" id="gateDisplay">•••</div>
     <div class="keypad">
       <button class="key" data-k="1">1</button>
@@ -779,7 +779,7 @@ document.querySelectorAll('figure.shot').forEach(f=>f.addEventListener('click',(
 lb.addEventListener('click',()=>lb.classList.remove('open'));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')lb.classList.remove('open');});
 
-/* ---------- Passcode gate for résumé ---------- */
+/* ---------- Passcode gate for resume ---------- */
 const PASSCODE="404";
 const gate=document.getElementById('gate'),gateBox=document.getElementById('gateBox'),
       gateDisplay=document.getElementById('gateDisplay'),gateMsg=document.getElementById('gateMsg'),
@@ -813,7 +813,7 @@ function checkGate(){
   }else{
     // log the failed attempt (feels real; also useful in console)
     const n=(+(localStorage.getItem('gateFails')||0))+1;localStorage.setItem('gateFails',n);
-    console.warn(`[SECURITY] Unauthorized résumé access attempt #${n} — code "${gateCode}" rejected.`);
+    console.warn(`[SECURITY] Unauthorized resume access attempt #${n} - code "${gateCode}" rejected.`);
     gateBox.classList.add('denied','shake');gateLock.textContent="⛔";
     gateMsg.className="gate-msg deny";
     gateMsg.textContent="ACCESS DENIED\n\nPotential intruder detected.\nThis attempt has been logged.";
@@ -821,7 +821,7 @@ function checkGate(){
     setTimeout(()=>gateBox.classList.remove('shake'),550);
   }
 }
-/* intercept all résumé (PDF) links */
+/* intercept all resume (PDF) links */
 document.querySelectorAll('a[href$=".pdf"]').forEach(a=>a.addEventListener('click',e=>{
   e.preventDefault();openGate(a.getAttribute('href'));
 }));
