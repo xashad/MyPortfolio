@@ -142,6 +142,23 @@ nav.scrolled{border-bottom:1px solid var(--line)}
 .proj .links a.soon{color:var(--muted);cursor:default}
 .proj .links a:not(.soon):hover{text-decoration:underline}
 
+/* AVATAR */
+.avatar{width:118px;height:118px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 20px;
+  border:3px solid var(--accent);box-shadow:0 12px 40px -10px var(--accent);background:var(--surface2)}
+
+/* SANDBOX (in-card chart reveal) */
+.sandbox-toggle{margin-top:14px;width:100%;padding:11px 14px;border-radius:10px;border:1px dashed var(--line);
+  background:var(--surface2);color:var(--accent);font-weight:600;font-size:.84rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s;font-family:'Inter',sans-serif}
+.sandbox-toggle:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.sandbox-toggle .caret{transition:transform .3s}
+.sandbox-toggle.open .caret{transform:rotate(180deg)}
+.sandbox-panel{max-height:0;overflow:hidden;transition:max-height .55s ease}
+.sandbox-panel.open{max-height:1800px}
+.sandbox-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:12px}
+.sandbox-grid figure.shot .imgwrap{height:108px}
+.sandbox-grid figure.shot figcaption{padding:8px 10px;font-size:.72rem;line-height:1.35}
+
 /* GALLERY */
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
 figure.shot{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;
@@ -266,7 +283,6 @@ footer{text-align:center;padding:30px 0;color:var(--muted);font-size:.85rem;bord
       <a href="#about">About</a>
       <a href="#skills">Skills</a>
       <a href="#projects">Projects</a>
-      <a href="#visuals">Visuals</a>
       <a href="#experience">Experience</a>
       <a href="#contact">Contact</a>
       <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
@@ -307,6 +323,7 @@ footer{text-align:center;padding:30px 0;color:var(--muted);font-size:.85rem;bord
       <p>I'm also a <strong>full-stack developer</strong> (React, Next.js, Supabase), which means I don't stop at a notebook — I ship models as live, interactive products. Currently building <strong>Lagani</strong>, an explainable stock-risk platform for Nepal's NEPSE market.</p>
     </div>
     <div class="info-card">
+      <img class="avatar" src="assets/ProfileAshad.jpeg" alt="Mohammad Ashad Khan" loading="lazy">
       <div class="info-row"><span class="k">📍 Location</span><span>Milan, Italy</span></div>
       <div class="info-row"><span class="k">🎓 Degree</span><span>MSc AI (2024–2026)</span></div>
       <div class="info-row"><span class="k">🔬 Focus</span><span>CV · DL · XAI</span></div>
@@ -403,6 +420,35 @@ footer{text-align:center;padding:30px 0;color:var(--muted);font-size:.85rem;bord
         <li>LIME + saliency explanations and a Streamlit dashboard for transparent risk scoring</li>
       </ul>
       <div class="tech"><span>PyTorch</span><span>Gradient Boosting</span><span>LIME</span><span>Neo4j</span><span>Streamlit</span></div>
+      <button class="sandbox-toggle" type="button" aria-expanded="false">🧪 Sandbox — explainability charts <span class="caret">▾</span></button>
+      <div class="sandbox-panel">
+        <div class="sandbox-grid">
+          <figure class="shot" data-cap="Lagani — end-to-end pipeline from raw NEPSE data to an explainable recommendation.">
+            <div class="imgwrap"><img src="assets/gallery/pipeline.png" alt="Lagani pipeline diagram" loading="lazy"></div>
+            <figcaption><b>System pipeline</b></figcaption>
+          </figure>
+          <figure class="shot" data-cap="Global explainability — gradient-boosting feature importance shows volatility and volume dominate the risk decision.">
+            <div class="imgwrap"><img src="assets/gallery/risk_importances.png" alt="Feature importance" loading="lazy"></div>
+            <figcaption><b>Global XAI</b> — feature importance</figcaption>
+          </figure>
+          <figure class="shot" data-cap="Local explainability — LIME breaks down a single prediction (NABIL → Medium risk) into its contributing features.">
+            <div class="imgwrap"><img src="assets/gallery/lime_NABIL.png" alt="LIME explanation for NABIL" loading="lazy"></div>
+            <figcaption><b>Local XAI (LIME)</b> — NABIL</figcaption>
+          </figure>
+          <figure class="shot" data-cap="Risk model confusion matrix — 80.9% test accuracy, leak-free symbol-disjoint validation.">
+            <div class="imgwrap"><img src="assets/gallery/risk_confusion.png" alt="Confusion matrix" loading="lazy"></div>
+            <figcaption><b>Confusion matrix</b> — 80.9% acc</figcaption>
+          </figure>
+          <figure class="shot" data-cap="CNN trend model — training and validation loss/accuracy curves.">
+            <div class="imgwrap"><img src="assets/gallery/cnn_curves.png" alt="CNN training curves" loading="lazy"></div>
+            <figcaption><b>CNN trend</b> — training curves</figcaption>
+          </figure>
+          <figure class="shot" data-cap="Sector-level risk breakdown across the NEPSE market.">
+            <div class="imgwrap"><img src="assets/gallery/sector_risk.png" alt="Sector risk breakdown" loading="lazy"></div>
+            <figcaption><b>Sector risk</b> across NEPSE</figcaption>
+          </figure>
+        </div>
+      </div>
       <!-- TODO: replace href="https://github.com/xashad" with the exact repo URL once public; add a live-demo link when hosted -->
       <div class="links"><a href="https://github.com/xashad" target="_blank">↗ Code</a><a class="soon">● Live demo soon</a></div>
     </article>
@@ -520,45 +566,10 @@ footer{text-align:center;padding:30px 0;color:var(--muted);font-size:.85rem;bord
   </div>
 </section>
 
-<!-- VISUALS / XAI GALLERY -->
-<section id="visuals" class="wrap reveal">
-  <div class="sec-head">
-    <div class="eyebrow">04 — Explainability in action</div>
-    <h2>Opening the black box</h2>
-    <p>Real outputs from my work — because an explanation you can <em>see</em> beats one you have to take on faith. Click any image to enlarge.</p>
-  </div>
-  <div class="gallery" id="gallery">
-    <figure class="shot" data-cap="Lagani — end-to-end pipeline from raw NEPSE data to an explainable recommendation.">
-      <div class="imgwrap"><img src="assets/gallery/pipeline.png" alt="Lagani pipeline diagram" loading="lazy"></div>
-      <figcaption><b>System pipeline.</b> Data → financial ratios → risk &amp; trend models → knowledge graph → ranked, explained recommendations.</figcaption>
-    </figure>
-    <figure class="shot" data-cap="Global explainability — gradient-boosting feature importance shows volatility and volume dominate the risk decision.">
-      <div class="imgwrap"><img src="assets/gallery/risk_importances.png" alt="Feature importance for risk model" loading="lazy"></div>
-      <figcaption><b>Global XAI.</b> What drives the risk decision across all stocks — annualised volatility leads.</figcaption>
-    </figure>
-    <figure class="shot" data-cap="Local explainability — LIME breaks down a single prediction (NABIL → Medium risk) into its contributing features.">
-      <div class="imgwrap"><img src="assets/gallery/lime_NABIL.png" alt="LIME explanation for NABIL stock" loading="lazy"></div>
-      <figcaption><b>Local XAI (LIME).</b> Per-stock explanation: why NABIL was scored <em>Medium</em> risk.</figcaption>
-    </figure>
-    <figure class="shot" data-cap="Risk model confusion matrix — 80.9% test accuracy, leak-free symbol-disjoint validation.">
-      <div class="imgwrap"><img src="assets/gallery/risk_confusion.png" alt="Risk model confusion matrix" loading="lazy"></div>
-      <figcaption><b>Evaluation.</b> Confusion matrix for the Low-vs-High risk classifier (80.9% test accuracy).</figcaption>
-    </figure>
-    <figure class="shot" data-cap="CNN trend model — training and validation loss/accuracy curves.">
-      <div class="imgwrap"><img src="assets/gallery/cnn_curves.png" alt="CNN training curves" loading="lazy"></div>
-      <figcaption><b>Training dynamics.</b> Learning curves for the CNN price-trend model.</figcaption>
-    </figure>
-    <figure class="shot" data-cap="Sector-level risk breakdown across the NEPSE market.">
-      <div class="imgwrap"><img src="assets/gallery/sector_risk.png" alt="Sector risk breakdown" loading="lazy"></div>
-      <figcaption><b>Market view.</b> Aggregated risk across NEPSE sectors.</figcaption>
-    </figure>
-  </div>
-</section>
-
 <!-- NOW + WRITING -->
 <section id="now" class="wrap reveal">
   <div class="sec-head">
-    <div class="eyebrow">05 — Momentum</div>
+    <div class="eyebrow">04 — Momentum</div>
     <h2>What I'm doing now &amp; writing</h2>
   </div>
   <div class="two-col">
@@ -591,7 +602,7 @@ footer{text-align:center;padding:30px 0;color:var(--muted);font-size:.85rem;bord
 <!-- EXPERIENCE -->
 <section id="experience" class="wrap reveal">
   <div class="sec-head">
-    <div class="eyebrow">06 — Journey</div>
+    <div class="eyebrow">05 — Journey</div>
     <h2>Experience &amp; education</h2>
   </div>
   <div class="about-grid">
@@ -770,6 +781,14 @@ projs.forEach(p=>p.addEventListener('mousemove',e=>{
   p.style.setProperty('--my',(e.clientY-r.top)+'px');
 }));
 const st=document.createElement('style');st.textContent='@keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}';document.head.appendChild(st);
+
+/* ---------- Sandbox toggle (in-card charts) ---------- */
+document.querySelectorAll('.sandbox-toggle').forEach(b=>b.addEventListener('click',()=>{
+  const panel=b.nextElementSibling;
+  const open=b.classList.toggle('open');
+  panel.classList.toggle('open',open);
+  b.setAttribute('aria-expanded',open);
+}));
 
 /* ---------- Lightbox ---------- */
 const lb=document.getElementById('lb'),lbimg=document.getElementById('lbimg'),lbcap=document.getElementById('lbcap');
