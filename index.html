@@ -673,9 +673,9 @@ footer{text-align:center;padding:30px 0;color:var(--muted);font-size:.85rem;bord
 <div id="gate">
   <div class="gate-box" id="gateBox">
     <div class="gate-lock" id="gateLock">🔒</div>
-    <h3>Restricted — Enter Passcode</h3>
+    <h3>Enter a Passcode</h3>
     <div class="ghint">Authorization required to access résumé</div>
-    <div class="gate-display empty" id="gateDisplay">— — —</div>
+    <div class="gate-display empty" id="gateDisplay">•••</div>
     <div class="keypad">
       <button class="key" data-k="1">1</button>
       <button class="key" data-k="2">2</button>
@@ -788,7 +788,7 @@ let gateCode="",gateTarget="",gateLocked=false;
 
 function renderGate(){
   if(gateCode){gateDisplay.textContent=gateCode;gateDisplay.classList.remove('empty');}
-  else{gateDisplay.textContent="— — —";gateDisplay.classList.add('empty');}
+  else{gateDisplay.textContent="•••";gateDisplay.classList.add('empty');}
 }
 function openGate(url){
   gateTarget=url;gateCode="";gateLocked=false;gateMsg.textContent="";gateMsg.className="gate-msg";
