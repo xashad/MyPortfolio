@@ -146,18 +146,18 @@ nav.scrolled{border-bottom:1px solid var(--line)}
 .avatar-wrap{position:relative;width:120px;height:120px;border-radius:50%;margin:0 auto 20px;
   border:3px solid var(--accent);box-shadow:0 12px 40px -10px var(--accent);background:var(--surface2);overflow:hidden}
 .avatar-wrap img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-  opacity:0;transition:opacity 1.2s ease}
-.avatar-wrap img.active{opacity:1;animation:hypnoIn 1.8s cubic-bezier(.2,.7,.2,1)}
-@keyframes hypnoIn{
-  0%{opacity:0;transform:rotate(-260deg) scale(1.8);filter:blur(12px) saturate(2.4) hue-rotate(60deg)}
-  55%{opacity:1}
-  100%{opacity:1;transform:rotate(0) scale(1);filter:blur(0) saturate(1) hue-rotate(0)}
-}
-.avatar-wrap.swap{animation:hypnoRing 1.8s ease}
-@keyframes hypnoRing{
-  0%{box-shadow:0 12px 40px -10px var(--accent)}
-  45%{box-shadow:0 0 30px 8px var(--accent2),0 12px 55px -4px var(--accent2)}
-  100%{box-shadow:0 12px 40px -10px var(--accent)}
+  opacity:0;transition:opacity 1.4s ease}
+.avatar-wrap img.active{opacity:1}
+/* self-drawing loading ring (plays on each photo change) */
+.avatar-wrap .draw-ring{position:absolute;inset:0;width:100%;height:100%;
+  transform:rotate(-90deg);pointer-events:none;z-index:3}
+.avatar-wrap .draw-ring circle{fill:none;stroke:var(--accent);stroke-width:4;stroke-linecap:round;
+  stroke-dasharray:352;stroke-dashoffset:352;filter:drop-shadow(0 0 5px var(--accent))}
+.avatar-wrap.swap .draw-ring circle{animation:drawRing 1.6s ease}
+@keyframes drawRing{
+  0%{stroke-dashoffset:352;stroke:var(--accent)}
+  50%{stroke-dashoffset:0;stroke:var(--accent2)}
+  100%{stroke-dashoffset:-352;stroke:var(--accent)}
 }
 
 /* SANDBOX (in-card chart reveal) */
@@ -354,6 +354,7 @@ footer{text-align:center;padding:30px 0;color:var(--muted);font-size:.85rem;bord
         <img src="assets/Profile/ProfileAshad5.jpeg" alt="" loading="lazy">
         <img src="assets/Profile/ProfileAshad6.jpeg" alt="" loading="lazy">
         <img src="assets/Profile/ProfileAshad7.jpeg" alt="" loading="lazy">
+        <svg class="draw-ring" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="56"/></svg>
       </div>
       <div class="info-row"><span class="k">📍 Location</span><span>Milan, Italy</span></div>
       <div class="info-row"><span class="k">🎓 Degree</span><span>MSc AI (2024–2026)</span></div>
