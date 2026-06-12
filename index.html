@@ -159,6 +159,17 @@ nav.scrolled{border-bottom:1px solid var(--line)}
 .sandbox-grid figure.shot .imgwrap{height:108px}
 .sandbox-grid figure.shot figcaption{padding:8px 10px;font-size:.72rem;line-height:1.35}
 
+/* UNIFORM CARD HEIGHT + VIEW MORE */
+.proj{min-height:430px}
+.proj.clamped{max-height:430px}
+.proj.has-vm{padding-bottom:58px}
+.viewmore{position:absolute;left:0;right:0;bottom:0;height:64px;border:none;cursor:pointer;
+  background:linear-gradient(to bottom,transparent,var(--bg2) 62%);color:var(--accent);
+  font-weight:600;font-size:.82rem;font-family:'Inter',sans-serif;display:flex;align-items:flex-end;
+  justify-content:center;gap:6px;padding-bottom:14px;z-index:4;transition:color .2s}
+.viewmore:hover{color:var(--accent2)}
+.viewmore .vmc{transition:transform .3s}
+
 /* GALLERY */
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
 figure.shot{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;
@@ -781,6 +792,24 @@ projs.forEach(p=>p.addEventListener('mousemove',e=>{
   p.style.setProperty('--my',(e.clientY-r.top)+'px');
 }));
 const st=document.createElement('style');st.textContent='@keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}';document.head.appendChild(st);
+
+/* ---------- Uniform card height: clamp tall cards with "View more" ---------- */
+document.querySelectorAll('.projects .proj').forEach(card=>{
+  if(card.scrollHeight>480){
+    card.classList.add('clamped','has-vm');
+    const btn=document.createElement('button');
+    btn.type='button';btn.className='viewmore';
+    btn.innerHTML='View more <span class="vmc">▾</span>';
+    card.appendChild(btn);
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const exp=card.classList.toggle('expanded');
+      card.classList.toggle('clamped',!exp);
+      btn.innerHTML=exp?'View less <span class="vmc">▴</span>':'View more <span class="vmc">▾</span>';
+      if(!exp)card.scrollIntoView({behavior:'smooth',block:'nearest'});
+    });
+  }
+});
 
 /* ---------- Sandbox toggle (in-card charts) ---------- */
 document.querySelectorAll('.sandbox-toggle').forEach(b=>b.addEventListener('click',()=>{
