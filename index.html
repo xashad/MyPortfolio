@@ -259,12 +259,26 @@ a.post:hover{border-color:var(--accent)}
 /* ============================================================
    Contact
    ============================================================ */
-.contact{display:grid;grid-template-columns:1fr auto;gap:var(--s7);align-items:center;
-  background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:var(--s8) var(--s7)}
+.contact{display:grid;grid-template-columns:1fr 1fr;gap:var(--s7);align-items:start;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:var(--s7)}
 .contact h2{font-size:clamp(1.5rem,3.4vw,2.1rem);letter-spacing:-.02em;margin-bottom:var(--s3)}
 .contact p{color:var(--muted);max-width:440px}
-.contact .actions{display:flex;flex-direction:column;gap:var(--s3);min-width:230px}
-.contact .actions .btn{justify-content:center}
+.contact .actions{display:flex;gap:var(--s3);flex-wrap:wrap;margin-top:var(--s5)}
+.contact-form{display:flex;flex-direction:column;gap:var(--s3);background:var(--bg-1);
+  border:1px solid var(--line);border-radius:var(--r);padding:var(--s5)}
+.contact-form .cf-title{font-family:var(--mono);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.contact-form input,.contact-form textarea{width:100%;padding:11px 13px;border:1px solid var(--line-2);
+  border-radius:var(--r-sm);background:var(--bg);color:var(--text);font-family:var(--sans);font-size:.92rem}
+.contact-form input::placeholder,.contact-form textarea::placeholder{color:var(--faint)}
+.contact-form input:focus,.contact-form textarea:focus{outline:none;border-color:var(--accent)}
+.contact-form textarea{resize:vertical;min-height:96px}
+.contact-form button{padding:12px;border-radius:var(--r-sm);border:1px solid var(--accent);background:var(--accent);
+  color:var(--on-accent);font-family:var(--sans);font-weight:600;font-size:.92rem;cursor:pointer;transition:background .15s}
+.contact-form button:hover{background:var(--accent-press)}
+.contact-form button:disabled{opacity:.7;cursor:default}
+.cf-msg{font-size:.82rem;min-height:1em;color:var(--muted)}
+.cf-msg.ok{color:var(--good)}
+.cf-msg.err{color:#e06a6a}
 footer{padding:var(--s6) 0;color:var(--faint);font-size:.82rem;border-top:1px solid var(--line);
   display:flex;justify-content:space-between;gap:var(--s4);flex-wrap:wrap;font-family:var(--mono)}
 footer a:hover{color:var(--accent)}
@@ -685,16 +699,23 @@ footer a:hover{color:var(--accent)}
 <section class="section" id="contact" aria-labelledby="contact-h">
   <div class="wrap reveal">
     <div class="contact">
-      <div>
+      <div class="contact-intro">
         <h2 id="contact-h">Let's build something explainable.</h2>
-        <p>Open to AI / ML &amp; Computer Vision roles, internships, and research collaborations. The fastest way to reach me is email — I reply within a day or two.</p>
+        <p>Open to AI / ML &amp; Computer Vision roles, internships, and research collaborations. Drop a line and it lands with me straight away.</p>
+        <div class="actions">
+          <a class="btn" href="https://linkedin.com/in/xashad" target="_blank" rel="noopener">LinkedIn</a>
+          <a class="btn" href="https://github.com/xashad" target="_blank" rel="noopener">GitHub</a>
+          <a class="btn" href="Mohammad_Ashad_Khan_Resume.pdf">Resume</a>
+        </div>
       </div>
-      <div class="actions">
-        <a class="btn primary" href="mailto:ashad.ak786@gmail.com">Email me</a>
-        <a class="btn" href="https://linkedin.com/in/xashad" target="_blank" rel="noopener">LinkedIn</a>
-        <a class="btn" href="https://github.com/xashad" target="_blank" rel="noopener">GitHub</a>
-        <a class="btn" href="Mohammad_Ashad_Khan_Resume.pdf">Resume</a>
-      </div>
+      <form class="contact-form" id="contactForm" novalidate>
+        <div class="cf-title">Send me a message</div>
+        <input id="cfName" type="text" autocomplete="name" maxlength="80" placeholder="Your name" required>
+        <input id="cfEmail" type="email" autocomplete="email" maxlength="120" placeholder="Email (so I can reply)" required>
+        <textarea id="cfBody" maxlength="2000" placeholder="What's on your mind?" required></textarea>
+        <button type="submit" id="cfSubmit">Send message</button>
+        <div class="cf-msg" id="cfMsg" aria-live="polite"></div>
+      </form>
     </div>
   </div>
 </section>
@@ -825,14 +846,25 @@ document.getElementById('yr').textContent = new Date().getFullYear();
     lastFocus=document.activeElement;gate.classList.add('open');setTimeout(()=>input.focus(),60);};
   const close=()=>{gate.classList.remove('open');if(lastFocus)lastFocus.focus();};
 
-  /* best-effort log; never blocks or errors out the visitor */
-  function logRequest(name){
+  /* best-effort log; never blocks or errors out the visitor.
+     Adds rough city/country from a free, key-less IP lookup (short timeout). */
+  async function geo(){
+    try{
+      const c=new AbortController();const t=setTimeout(()=>c.abort(),1500);
+      const g=await fetch('https://ipwho.is/',{signal:c.signal}).then(r=>r.json());
+      clearTimeout(t);
+      if(g&&g.success)return{city:g.city||null,country:g.country||null};
+    }catch(e){}
+    return{city:null,country:null};
+  }
+  async function logRequest(name){
     if(!ready)return;
+    const {city,country}=await geo();
     try{
       fetch(cfg.url+'/rest/v1/resume_requests',{
         method:'POST',keepalive:true,
         headers:{'apikey':cfg.anonKey,'Authorization':'Bearer '+cfg.anonKey,'Content-Type':'application/json','Prefer':'return=minimal'},
-        body:JSON.stringify({name:name,page:location.pathname,referrer:document.referrer||null})
+        body:JSON.stringify({name:name,referrer:document.referrer||null,city:city,country:country})
       }).catch(()=>{});
     }catch(e){}
   }
@@ -852,6 +884,48 @@ document.getElementById('yr').textContent = new Date().getFullYear();
   cancel.addEventListener('click',close);
   gate.addEventListener('click',e=>{if(e.target===gate)close();});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&gate.classList.contains('open'))close();});
+})();
+
+/* ---------- Contact form: log to Supabase (table `messages`) + Telegram alert ----------
+   Falls back to opening the visitor's email app if Supabase is unreachable, so a
+   message is never silently lost. */
+(function(){
+  const cfg=window.SUPABASE_CONFIG||{};
+  const ready=cfg.url&&cfg.url.indexOf('http')===0&&cfg.anonKey&&cfg.anonKey.indexOf('YOUR_')!==0;
+  const form=document.getElementById('contactForm');
+  if(!form)return;
+  const EMAIL='ashad.ak786@gmail.com';
+  const name=document.getElementById('cfName'),email=document.getElementById('cfEmail'),
+        body=document.getElementById('cfBody'),btn=document.getElementById('cfSubmit'),msg=document.getElementById('cfMsg');
+  const mailto=(n,e,b)=>{location.href='mailto:'+EMAIL+'?subject='+encodeURIComponent('Portfolio message from '+n)
+    +'&body='+encodeURIComponent(b+'\n\n— '+n+' ('+e+')');};
+
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const n=name.value.trim(),em=email.value.trim(),b=body.value.trim();
+    if(!n||!em||!b){msg.className='cf-msg err';msg.textContent='Please fill in all three fields.';return;}
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){msg.className='cf-msg err';msg.textContent='That email looks off — mind double-checking?';return;}
+    btn.disabled=true;btn.textContent='Sending…';msg.className='cf-msg';msg.textContent='';
+    let ok=false;
+    if(ready){
+      try{
+        const r=await fetch(cfg.url+'/rest/v1/messages',{
+          method:'POST',
+          headers:{'apikey':cfg.anonKey,'Authorization':'Bearer '+cfg.anonKey,'Content-Type':'application/json','Prefer':'return=minimal'},
+          body:JSON.stringify({name:n,email:em,body:b,referrer:document.referrer||null})
+        });
+        ok=r.ok;
+      }catch(err){ok=false;}
+    }
+    btn.disabled=false;btn.textContent='Send message';
+    if(ok){
+      msg.className='cf-msg ok';msg.textContent='Thanks '+n.split(/\s+/)[0]+" — your message reached me. I'll reply to "+em+' soon.';
+      form.reset();
+    }else{
+      msg.className='cf-msg';msg.textContent='Opening your email app as a backup…';
+      mailto(n,em,b);
+    }
+  });
 })();
 
 /* ---------- CMS layer: re-render editable sections from saved Supabase content ----------
