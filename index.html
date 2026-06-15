@@ -633,7 +633,7 @@ footer a:hover{color:var(--accent)}
     <div class="about-grid">
       <div>
         <h3 class="col-h">Experience</h3>
-        <div class="timeline">
+        <div class="timeline" id="expTimeline">
           <div class="tl-item">
             <div class="when">May 2022 – Jun 2025</div>
             <h3>Frontend Web Developer</h3>
@@ -656,7 +656,7 @@ footer a:hover{color:var(--accent)}
       </div>
       <div>
         <h3 class="col-h">Education</h3>
-        <div class="timeline">
+        <div class="timeline" id="eduTimeline">
           <div class="tl-item">
             <h3>MSc Artificial Intelligence for Science &amp; Technology</h3>
             <div class="org">Università degli Studi di Milano-Bicocca, Italy</div>
@@ -739,6 +739,11 @@ footer a:hover{color:var(--accent)}
   </div>
 </div>
 
+<!-- Optional CMS layer: edit content from /admin.html (Supabase). Falls back to the static HTML above.
+     The Supabase library is only loaded when config.js is actually filled in, so normal
+     visitors don't pay for it. -->
+<script src="config.js"></script>
+<script src="defaults.js"></script>
 <script>
 document.documentElement.classList.add('js');
 document.getElementById('yr').textContent = new Date().getFullYear();
@@ -790,14 +795,14 @@ document.getElementById('yr').textContent = new Date().getFullYear();
   document.querySelectorAll('.reveal').forEach(r=>obs.observe(r));
 })();
 
-/* ---------- Project filter ---------- */
+/* ---------- Project filter (re-queries cards so re-rendered ones are included) ---------- */
 (function(){
-  const filters=[...document.querySelectorAll('.filter')],projs=[...document.querySelectorAll('.proj')];
+  const filters=[...document.querySelectorAll('.filter')];
   filters.forEach(f=>f.onclick=()=>{
     filters.forEach(x=>{x.classList.remove('active');x.setAttribute('aria-pressed','false');});
     f.classList.add('active');f.setAttribute('aria-pressed','true');
     const cat=f.dataset.f;
-    projs.forEach(p=>{p.style.display=(cat==='all'||p.dataset.cat.includes(cat))?'':'none';});
+    document.querySelectorAll('.proj').forEach(p=>{p.style.display=(cat==='all'||p.dataset.cat.includes(cat))?'':'none';});
   });
 })();
 
@@ -851,6 +856,116 @@ document.getElementById('yr').textContent = new Date().getFullYear();
     else if(e.key==='Enter')input('ok');
     else if(e.key==='Escape')close();
   });
+})();
+
+/* ---------- CMS layer: re-render editable sections from saved Supabase content ----------
+   No saved content (or Supabase not configured) → the static HTML above is kept as-is,
+   so the live site is unchanged until you start editing in /admin.html.
+   The flagship Lagani card stays static and is never touched. */
+(function(){
+  const cfg=window.SUPABASE_CONFIG||{};
+  const ready=cfg.url&&cfg.url.indexOf('http')===0&&cfg.anonKey&&cfg.anonKey.indexOf('YOUR_')!==0;
+  if(!ready)return;
+
+  const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+  const $=s=>document.querySelector(s);
+  const set=(sel,prop,val)=>{const el=$(sel);if(el&&val!=null)el[prop]=val;};
+
+  function render(c){
+    /* hero */
+    if(c.hero){
+      set('.hero .eyebrow','textContent',c.hero.eyebrow);
+      set('#hero-name','textContent',c.hero.name);
+      set('.hero .lead','textContent',c.hero.lead);
+      set('.hero p.sub','innerHTML',c.hero.sub); /* rich */
+      if(Array.isArray(c.hero.meta)){
+        $('.hero .meta').innerHTML=c.hero.meta.map(m=>
+          `<span${m.live?' class="live"':''}>${esc(m.text)}</span>`).join('');
+      }
+    }
+    /* stats */
+    if(Array.isArray(c.stats)){
+      $('.hero .stats').innerHTML=c.stats.map(s=>
+        `<div class="stat"><div class="n">${esc(s.n)}</div><div class="l">${esc(s.l)}</div></div>`).join('');
+    }
+    /* about */
+    if(c.about){
+      if(c.about.portrait)set('.portrait','src',c.about.portrait);
+      if(Array.isArray(c.about.paragraphs))
+        $('#about .prose').innerHTML=c.about.paragraphs.map(p=>`<p>${p}</p>`).join(''); /* rich */
+      if(Array.isArray(c.about.facts))
+        $('#about .facts').innerHTML=c.about.facts.map(f=>
+          `<div class="row"><span class="k">${esc(f.k)}</span><span class="v${f.ok?' ok':''}">${esc(f.v)}</span></div>`).join('');
+    }
+    /* skills */
+    if(Array.isArray(c.skills)){
+      $('.skill-grid').innerHTML=c.skills.map(g=>
+        `<div class="skill-card"><h3>${esc(g.title)}</h3><div class="chips">${
+          (g.chips||[]).map(ch=>`<span class="chip">${esc(ch)}</span>`).join('')}</div></div>`).join('');
+    }
+    /* projects (keep the static featured card; replace the rest) */
+    if(Array.isArray(c.projects)){
+      const grid=$('#projGrid');
+      grid.querySelectorAll('.proj:not(.featured)').forEach(n=>n.remove());
+      const html=c.projects.map(p=>{
+        const metrics=(p.metrics&&p.metrics.length)?`<div class="metrics">${
+          p.metrics.map(m=>`<div class="metric"><div class="mv">${esc(m.mv)}</div><div class="ml">${esc(m.ml)}</div></div>`).join('')}</div>`:'';
+        const points=(p.points&&p.points.length)?`<ul>${p.points.map(x=>`<li>${x}</li>`).join('')}</ul>`:''; /* rich */
+        const tech=(p.tech&&p.tech.length)?`<div class="tech">${p.tech.map(x=>`<span>${esc(x)}</span>`).join('')}</div>`:'';
+        const links=(p.links&&p.links.length)?`<div class="links">${p.links.map(l=>
+          l.soon?`<a class="soon">${esc(l.label)}</a>`
+                :`<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join('')}</div>`:'';
+        return `<article class="proj" data-cat="${esc((p.cats||[]).join(' '))}">`+
+          (p.flag?`<div class="flag">${esc(p.flag)}</div>`:'')+
+          `<h3>${esc(p.name)}</h3>`+
+          (p.tagline?`<div class="tagline">${esc(p.tagline)}</div>`:'')+
+          metrics+points+tech+links+`</article>`;
+      }).join('');
+      grid.insertAdjacentHTML('beforeend',html);
+    }
+    /* momentum */
+    if(c.momentum){
+      if(Array.isArray(c.momentum.now))
+        $('#now .now ul').innerHTML=c.momentum.now.map(x=>`<li>${x}</li>`).join(''); /* rich */
+      if(Array.isArray(c.momentum.writing)){
+        const col=$('#now .writing-col');
+        col.innerHTML='<h3>Writing</h3>'+c.momentum.writing.map(w=>{
+          const inner=`<div><h4>${esc(w.title)}</h4><p>${esc(w.sub)}</p></div>`+
+            `<span class="tag${w.tag==='Published'?' pub':''}">${esc(w.tag)}</span>`;
+          return w.url?`<a class="post" href="${esc(w.url)}" target="_blank" rel="noopener">${inner}</a>`
+                      :`<div class="post">${inner}</div>`;
+        }).join('');
+      }
+    }
+    /* experience / education */
+    const tl=(arr,withWhen)=>arr.map(e=>`<div class="tl-item">`+
+      (withWhen&&e.when?`<div class="when">${esc(e.when)}</div>`:'')+
+      `<h3>${esc(e.title)}</h3><div class="org">${esc(e.org)}</div><p>${esc(e.desc)}</p></div>`).join('');
+    if(Array.isArray(c.experience))$('#expTimeline').innerHTML=tl(c.experience,true);
+    if(Array.isArray(c.education))$('#eduTimeline').innerHTML=tl(c.education,false);
+    /* certs */
+    if(Array.isArray(c.certs))
+      $('.cert-grid').innerHTML=c.certs.map(ct=>
+        `<div class="cert"><h4>${esc(ct.title)}</h4><span>${esc(ct.sub)}</span></div>`).join('');
+    /* contact */
+    if(c.contact){
+      set('#contact-h','textContent',c.contact.heading);
+      set('#contact .contact p','textContent',c.contact.text);
+    }
+  }
+
+  /* load the Supabase client lazily, only now that we know we need it */
+  const s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+  s.onload=function(){
+    try{
+      const sb=supabase.createClient(cfg.url,cfg.anonKey);
+      sb.from('site_content').select('data').eq('id','main').single().then(({data,error})=>{
+        if(!error&&data&&data.data)render(data.data);
+      }).catch(()=>{});
+    }catch(e){/* keep static content */}
+  };
+  document.head.appendChild(s);
 })();
 </script>
 </body>
