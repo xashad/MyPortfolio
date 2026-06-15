@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Portfolio Admin · Mohammad Ashad Khan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e1116; --surface:#161b22; --surface-2:#1c222b; --line:#2a313c; --line-2:#3a434f;
+  --text:#e8ebf0; --muted:#9aa4b2; --faint:#6b7686; --accent:#4c8dff; --accent-press:#3d7af0;
+  --good:#3fb56e; --bad:#e06a6a; --r:10px; --mono:'JetBrains Mono',ui-monospace,monospace; --sans:'Inter',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.5}
+a{color:var(--accent)}
+.bar{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;padding:12px 20px}
+.bar .ttl{font-weight:700}.bar .ttl span{color:var(--accent)}
+.bar .actions{display:flex;gap:10px;align-items:center}
+.wrap{max-width:860px;margin:0 auto;padding:24px 20px 96px}
+
+button{font-family:inherit;cursor:pointer;border:1px solid var(--line-2);background:var(--surface);
+  color:var(--text);padding:9px 15px;border-radius:8px;font-weight:600;font-size:.88rem;transition:.15s}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:var(--accent-press)}
+button.ghost{border:none;background:transparent;color:var(--muted)}
+button.ghost:hover{color:var(--text)}
+button.danger{color:var(--bad);border-color:transparent;background:transparent;padding:5px 9px;font-size:.8rem}
+button:disabled{opacity:.5;cursor:not-allowed}
+
+input[type=text],input[type=email],input[type=password],textarea{font-family:inherit;width:100%;padding:9px 11px;
+  border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);font-size:.9rem;resize:vertical}
+input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+label{display:block;font-size:.74rem;font-weight:600;color:var(--muted);margin:0 0 5px;font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase}
+.check{display:flex;align-items:center;gap:8px;font-family:var(--sans);text-transform:none;letter-spacing:0;color:var(--text);font-size:.85rem;cursor:pointer;margin:2px 0 0}
+.check input{width:16px;height:16px;accent-color:var(--accent)}
+
+.login{max-width:380px;margin:13vh auto 0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:30px}
+.login h1{font-size:1.25rem;margin-bottom:6px}
+.login p{color:var(--muted);font-size:.9rem;margin-bottom:20px}
+.login .field{margin-bottom:14px}
+.msg{font-size:.85rem;padding:9px 12px;border-radius:8px;margin-top:8px;display:none}
+.msg.show{display:block}
+.msg.err{background:rgba(224,106,106,.12);color:var(--bad)}
+
+.acc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px;overflow:hidden}
+.acc>summary{padding:15px 18px;font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.acc>summary::-webkit-details-marker{display:none}
+.acc>summary .cnt{font-family:var(--mono);font-weight:400;color:var(--faint);font-size:.78rem}
+.acc[open]>summary{border-bottom:1px solid var(--line)}
+.body{padding:18px}
+.field{margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.item{border:1px solid var(--line);border-radius:9px;padding:14px;margin-bottom:12px;background:var(--surface-2)}
+.item-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.item-head .lbl{font-weight:600;font-size:.85rem;font-family:var(--mono);color:var(--muted)}
+.hint{font-size:.74rem;color:var(--faint);margin-top:4px}
+.addbtn{border-style:dashed;width:100%;color:var(--accent);border-color:var(--accent);background:transparent}
+.sublabel{font-family:var(--mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--faint);margin:14px 0 8px}
+
+.toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);background:#fff;color:#111;padding:11px 20px;
+  border-radius:9px;font-size:.88rem;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:50}
+.toast.show{opacity:1}
+.savebar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);
+  padding:12px 20px;display:flex;justify-content:flex-end;gap:12px;z-index:30}
+.savebar .left{margin-right:auto;color:var(--faint);font-size:.82rem;align-self:center;font-family:var(--mono)}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<div id="loginView">
+  <div class="login">
+    <h1>Portfolio Admin</h1>
+    <p>Sign in to edit your live site from anywhere.</p>
+    <div class="field"><label>Email</label><input id="email" type="email" autocomplete="username" placeholder="you@example.com"></div>
+    <div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+    <button class="primary" id="loginBtn" style="width:100%">Sign in</button>
+    <div class="msg err" id="loginMsg"></div>
+  </div>
+</div>
+
+<div id="editorView" class="hidden">
+  <div class="bar">
+    <div class="ttl">Portfolio<span>.</span>Admin</div>
+    <div class="actions">
+      <a href="index.html" target="_blank"><button class="ghost">View site ↗</button></a>
+      <button class="ghost" id="logoutBtn">Sign out</button>
+    </div>
+  </div>
+  <div class="wrap" id="forms"></div>
+  <div class="savebar">
+    <span class="left" id="status"></span>
+    <button id="reloadBtn">Discard changes</button>
+    <button class="primary" id="saveBtn">Save &amp; publish</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script src="defaults.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const $=s=>document.querySelector(s);
+const cfg=window.SUPABASE_CONFIG||{};
+const configured=cfg.url&&cfg.url.indexOf('http')===0&&cfg.anonKey&&cfg.anonKey.indexOf('YOUR_')!==0;
+let sb=null,content=null;
+const clone=o=>JSON.parse(JSON.stringify(o));
+const toast=t=>{const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200);};
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+
+/* ---------- auth ---------- */
+function loginError(t){const m=$('#loginMsg');m.textContent=t;m.classList.add('show');}
+async function init(){
+  if(!configured){loginError("Supabase isn't configured yet. Fill in config.js (see SETUP.md).");$('#loginBtn').disabled=true;return;}
+  sb=supabase.createClient(cfg.url,cfg.anonKey);
+  const {data}=await sb.auth.getSession();
+  if(data.session)openEditor();
+}
+$('#loginBtn').onclick=async()=>{
+  const email=$('#email').value.trim(),password=$('#password').value;
+  if(!email||!password)return loginError('Enter your email and password.');
+  $('#loginBtn').disabled=true;$('#loginBtn').textContent='Signing in…';
+  const {error}=await sb.auth.signInWithPassword({email,password});
+  $('#loginBtn').disabled=false;$('#loginBtn').textContent='Sign in';
+  if(error)return loginError(error.message);
+  openEditor();
+};
+$('#password').addEventListener('keydown',e=>{if(e.key==='Enter')$('#loginBtn').click();});
+$('#logoutBtn').onclick=async()=>{await sb.auth.signOut();location.reload();};
+
+/* ---------- load / save ---------- */
+async function openEditor(){$('#loginView').classList.add('hidden');$('#editorView').classList.remove('hidden');await load();}
+async function load(){
+  $('#status').textContent='Loading…';
+  let saved=null;
+  try{const {data,error}=await sb.from('site_content').select('data').eq('id','main').single();if(!error&&data)saved=data.data;}catch(e){}
+  content=saved?merge(saved):clone(window.DEFAULT_CONTENT);
+  build();
+  $('#status').textContent=saved?'Loaded saved content.':'No saved content yet — showing the current site. Save to publish.';
+}
+function merge(d){const def=clone(window.DEFAULT_CONTENT),out=clone(d);for(const k in def)if(out[k]==null)out[k]=def[k];return out;}
+$('#saveBtn').onclick=async()=>{
+  collect();
+  $('#saveBtn').disabled=true;$('#saveBtn').textContent='Saving…';
+  const {error}=await sb.from('site_content').upsert({id:'main',data:content,updated_at:new Date().toISOString()});
+  $('#saveBtn').disabled=false;$('#saveBtn').textContent='Save & publish';
+  if(error){toast('Save failed: '+error.message);return;}
+  toast('Saved & published ✓');$('#status').textContent='Last saved just now.';
+};
+$('#reloadBtn').onclick=()=>load();
+
+/* ============================================================
+   Form helpers
+   ============================================================ */
+function field(label,value,opts={}){
+  const f=el('div','field');
+  if(label)f.appendChild(el('label',null,label));
+  const node=opts.textarea?el('textarea'):el('input');
+  if(opts.textarea)node.rows=opts.rows||3; else node.type='text';
+  node.value=value==null?'':value;
+  if(opts.placeholder)node.placeholder=opts.placeholder;
+  node.dataset.k=opts.key||'';
+  f.appendChild(node);
+  if(opts.hint)f.appendChild(el('div','hint',opts.hint));
+  return f;
+}
+function checkbox(label,checked,key){
+  const l=el('label','check');l.style.cssText='';
+  const i=el('input');i.type='checkbox';i.checked=!!checked;i.dataset.k=key;
+  l.appendChild(i);l.appendChild(document.createTextNode(' '+label));
+  const wrap=el('div','field');wrap.appendChild(l);return wrap;
+}
+function strField(label,arr,hint){
+  return field(label,(arr||[]).join('\n'),{textarea:true,rows:Math.min(9,Math.max(2,(arr||[]).length+1)),hint:hint||'One per line.',key:'_lines'});
+}
+function readLines(node){return node?node.value.split('\n').map(s=>s.trim()).filter(Boolean):[];}
+
+function section(title,count,builder){
+  const d=el('details','acc');
+  const sum=el('summary',null,'<span>'+title+'</span>');
+  if(count)sum.appendChild(el('span','cnt',count));
+  d.appendChild(sum);
+  const body=el('div','body');builder(body);d.appendChild(body);
+  return d;
+}
+function listEditor(container,items,fieldsFn,blank,labelFn){
+  const list=el('div');container.appendChild(list);
+  function add(item){
+    const wrap=el('div','item');
+    const head=el('div','item-head');
+    head.appendChild(el('span','lbl',labelFn?labelFn(item):'Item'));
+    const del=el('button','danger','✕ Remove');del.onclick=()=>wrap.remove();
+    head.appendChild(del);wrap.appendChild(head);
+    fieldsFn(item,wrap);list.appendChild(wrap);
+  }
+  (items||[]).forEach(add);
+  const addBtn=el('button','addbtn','+ Add');addBtn.onclick=()=>add(clone(blank));
+  container.appendChild(addBtn);container._list=list;
+}
+
+const RICH='Basic inline HTML allowed (e.g. <strong>, <em>).';
+
+function build(){
+  const root=$('#forms');root.innerHTML='';const c=content;
+
+  /* 0 HERO */
+  root.appendChild(section('Hero','',body=>{
+    const h=c.hero;
+    body.appendChild(field('Eyebrow (small label)',h.eyebrow,{key:'eyebrow'}));
+    body.appendChild(field('Name',h.name,{key:'name'}));
+    body.appendChild(field('Lead line',h.lead,{key:'lead'}));
+    body.appendChild(field('Intro paragraph',h.sub,{key:'sub',textarea:true,rows:4,hint:RICH}));
+    body.appendChild(el('div','sublabel','Meta items (the small line under the buttons)'));
+    const mc=el('div');
+    listEditor(mc,h.meta,(m,w)=>{
+      w.appendChild(field('Text',m.text,{key:'text'}));
+      w.appendChild(checkbox('Show pulsing green “available” dot',m.live,'live'));
+    },{text:'',live:false},m=>m.text||'Meta');
+    mc.dataset.role='meta';body.appendChild(mc);
+  }));
+
+  /* 1 STATS */
+  root.appendChild(section('Stats',c.stats.length+' items',body=>{
+    listEditor(body,c.stats,(s,w)=>{
+      const g=el('div','grid2');
+      g.appendChild(field('Number',s.n,{key:'n'}));
+      g.appendChild(field('Label',s.l,{key:'l'}));
+      w.appendChild(g);
+    },{n:'',l:''},s=>s.l||'Stat');
+  }));
+
+  /* 2 ABOUT */
+  root.appendChild(section('About','',body=>{
+    const a=c.about;
+    body.appendChild(field('Portrait image path',a.portrait,{key:'portrait',hint:'Path under the repo, e.g. assets/Profile/ProfileAshad1.jpeg'}));
+    const pf=strField('Paragraphs',a.paragraphs,'One paragraph per line. '+RICH);
+    pf.dataset.role='paras';body.appendChild(pf);
+    body.appendChild(el('div','sublabel','Fact rows (the box beside the photo)'));
+    const fc=el('div');
+    listEditor(fc,a.facts,(f,w)=>{
+      const g=el('div','grid2');
+      g.appendChild(field('Label',f.k,{key:'k'}));
+      g.appendChild(field('Value',f.v,{key:'v'}));
+      w.appendChild(g);
+      w.appendChild(checkbox('Show value in green (e.g. “Open to work”)',f.ok,'ok'));
+    },{k:'',v:'',ok:false},f=>f.k||'Fact');
+    fc.dataset.role='facts';body.appendChild(fc);
+  }));
+
+  /* 3 SKILLS */
+  root.appendChild(section('Skills',c.skills.length+' groups',body=>{
+    listEditor(body,c.skills,(s,w)=>{
+      w.appendChild(field('Group title',s.title,{key:'title'}));
+      w.appendChild(strField('Skills',s.chips,'One skill per line.'));
+    },{title:'',chips:[]},s=>s.title||'Skill group');
+  }));
+
+  /* 4 PROJECTS */
+  root.appendChild(section('Projects',c.projects.length+' items',body=>{
+    body.appendChild(el('div','hint','Note: the flagship “Lagani” card (with its charts) is fixed in the site and not listed here.'));
+    listEditor(body,c.projects,(p,w)=>{
+      w.appendChild(field('Name',p.name,{key:'name'}));
+      w.appendChild(field('Flag / badge',p.flag,{key:'flag'}));
+      w.appendChild(field('Tagline',p.tagline,{key:'tagline'}));
+      w.appendChild(field('Categories',(p.cats||[]).join(', '),{key:'cats',hint:'Comma-separated. Use any of: xai, cv, web (these drive the filter buttons).'}));
+      w.appendChild(strField('Bullet points',p.points,'One bullet per line. '+RICH));
+      w.appendChild(strField('Tech tags',p.tech,'One per line.'));
+      const ml=el('div');ml.appendChild(el('div','sublabel','Metrics (optional)'));
+      listEditor(ml,p.metrics||[],(m,mw)=>{
+        const g=el('div','grid2');
+        g.appendChild(field('Value',m.mv,{key:'mv'}));
+        g.appendChild(field('Label',m.ml,{key:'ml'}));
+        mw.appendChild(g);
+      },{mv:'',ml:''},m=>m.ml||'Metric');
+      ml.dataset.role='metrics';w.appendChild(ml);
+      const ll=el('div');ll.appendChild(el('div','sublabel','Links'));
+      listEditor(ll,p.links||[],(l,lw)=>{
+        w_link(l,lw);
+      },{label:'↗ Code',url:'https://github.com/xashad',soon:false},l=>l.label||'Link');
+      ll.dataset.role='links';w.appendChild(ll);
+    },{name:'',flag:'',tagline:'',cats:[],points:[],tech:[],metrics:[],links:[]},p=>p.name||'Project');
+  }));
+
+  /* 5 MOMENTUM */
+  root.appendChild(section('Momentum','',body=>{
+    const m=c.momentum;
+    const nf=strField('Currently (bullet list)',m.now,'One item per line. '+RICH);
+    nf.dataset.role='now';body.appendChild(nf);
+    body.appendChild(el('div','sublabel','Writing / publications'));
+    const wc=el('div');
+    listEditor(wc,m.writing,(p,w)=>{
+      w.appendChild(field('Title',p.title,{key:'title'}));
+      w.appendChild(field('Subtitle',p.sub,{key:'sub'}));
+      const g=el('div','grid2');
+      g.appendChild(field('Tag',p.tag,{key:'tag',hint:'“Published” turns green; anything else is muted.'}));
+      g.appendChild(field('Link URL (optional)',p.url,{key:'url'}));
+      w.appendChild(g);
+    },{title:'',sub:'',tag:'',url:''},p=>p.title||'Post');
+    wc.dataset.role='writing';body.appendChild(wc);
+  }));
+
+  /* 6 EXPERIENCE */
+  root.appendChild(section('Experience',c.experience.length+' items',body=>{
+    listEditor(body,c.experience,(e,w)=>{
+      w.appendChild(field('When',e.when,{key:'when'}));
+      w.appendChild(field('Title',e.title,{key:'title'}));
+      w.appendChild(field('Organisation',e.org,{key:'org'}));
+      w.appendChild(field('Description',e.desc,{key:'desc',textarea:true,rows:2}));
+    },{when:'',title:'',org:'',desc:''},e=>e.title||'Role');
+  }));
+
+  /* 7 EDUCATION */
+  root.appendChild(section('Education',c.education.length+' items',body=>{
+    listEditor(body,c.education,(e,w)=>{
+      w.appendChild(field('Title',e.title,{key:'title'}));
+      w.appendChild(field('Organisation',e.org,{key:'org'}));
+      w.appendChild(field('Description',e.desc,{key:'desc',textarea:true,rows:2}));
+    },{title:'',org:'',desc:''},e=>e.title||'Degree');
+  }));
+
+  /* 8 CERTS */
+  root.appendChild(section('Certifications',c.certs.length+' items',body=>{
+    listEditor(body,c.certs,(ct,w)=>{
+      w.appendChild(field('Title',ct.title,{key:'title'}));
+      w.appendChild(field('Subtitle',ct.sub,{key:'sub'}));
+    },{title:'',sub:''},ct=>ct.title||'Certification');
+  }));
+
+  /* 9 CONTACT */
+  root.appendChild(section('Contact','',body=>{
+    body.appendChild(field('Heading',c.contact.heading,{key:'heading'}));
+    body.appendChild(field('Text',c.contact.text,{key:'text',textarea:true,rows:3}));
+    body.dataset.role='contact';
+  }));
+}
+function w_link(l,lw){
+  lw.appendChild(field('Label',l.label,{key:'label',hint:'Tip: keep the “↗ ” prefix, e.g. “↗ Code”.'}));
+  lw.appendChild(field('URL',l.url,{key:'url'}));
+  lw.appendChild(checkbox('“Soon” style (muted, not a real link)',l.soon,'soon'));
+}
+
+/* ============================================================
+   Read DOM back into `content`
+   ============================================================ */
+function readKeyed(scope){
+  const o={};
+  scope.querySelectorAll('[data-k]').forEach(n=>{if(n.dataset.k)o[n.dataset.k]=(n.type==='checkbox')?n.checked:n.value.trim();});
+  return o;
+}
+function isEmptyVal(v){
+  if(v==null)return true;
+  if(typeof v==='boolean')return true;            // a lone boolean doesn't make an item "non-empty"
+  if(typeof v==='string')return v.trim()==='';
+  if(Array.isArray(v))return v.every(isEmptyVal);
+  if(typeof v==='object')return Object.values(v).every(isEmptyVal);
+  return false;
+}
+function readList(root,mapFn){
+  const items=[];const list=(root&&root._list)||root;
+  if(!list)return items;
+  [...list.children].forEach(it=>{if(it.classList&&it.classList.contains('item')){const m=mapFn(it);if(!isEmptyVal(m))items.push(m);}});
+  return items;
+}
+function directTextareas(item){
+  return [...item.children].filter(ch=>ch.querySelector&&ch.querySelector('textarea')&&!ch.dataset.role)
+    .map(ch=>ch.querySelector('textarea'));
+}
+
+function collect(){
+  const a=$('#forms').querySelectorAll(':scope > .acc');
+
+  /* hero */
+  const hb=a[0].querySelector('.body');
+  Object.assign(content.hero,{
+    eyebrow:hb.querySelector('[data-k="eyebrow"]').value.trim(),
+    name:hb.querySelector('[data-k="name"]').value.trim(),
+    lead:hb.querySelector('[data-k="lead"]').value.trim(),
+    sub:hb.querySelector('[data-k="sub"]').value.trim()
+  });
+  content.hero.meta=readList(hb.querySelector('[data-role="meta"]'),it=>readKeyed(it));
+
+  /* stats */
+  content.stats=readList(a[1].querySelector('.body'),it=>readKeyed(it));
+
+  /* about */
+  const ab=a[2].querySelector('.body');
+  content.about.portrait=ab.querySelector('[data-k="portrait"]').value.trim();
+  content.about.paragraphs=readLines(ab.querySelector('[data-role="paras"] textarea'));
+  content.about.facts=readList(ab.querySelector('[data-role="facts"]'),it=>readKeyed(it));
+
+  /* skills */
+  content.skills=readList(a[3].querySelector('.body'),it=>({
+    title:it.querySelector('[data-k="title"]').value.trim(),
+    chips:readLines(it.querySelector('textarea'))
+  }));
+
+  /* projects */
+  content.projects=readList(a[4].querySelector('.body'),it=>{
+    const ta=directTextareas(it); // [points, tech]
+    return {
+      name:it.querySelector('[data-k="name"]').value.trim(),
+      flag:it.querySelector('[data-k="flag"]').value.trim(),
+      tagline:it.querySelector('[data-k="tagline"]').value.trim(),
+      cats:it.querySelector('[data-k="cats"]').value.split(',').map(s=>s.trim()).filter(Boolean),
+      points:readLines(ta[0]),
+      tech:readLines(ta[1]),
+      metrics:readList(it.querySelector('[data-role="metrics"]'),m=>readKeyed(m)),
+      links:readList(it.querySelector('[data-role="links"]'),l=>readKeyed(l))
+    };
+  });
+
+  /* momentum */
+  const mb=a[5].querySelector('.body');
+  content.momentum.now=readLines(mb.querySelector('[data-role="now"] textarea'));
+  content.momentum.writing=readList(mb.querySelector('[data-role="writing"]'),it=>readKeyed(it));
+
+  /* experience / education / certs */
+  content.experience=readList(a[6].querySelector('.body'),it=>readKeyed(it));
+  content.education=readList(a[7].querySelector('.body'),it=>readKeyed(it));
+  content.certs=readList(a[8].querySelector('.body'),it=>readKeyed(it));
+
+  /* contact */
+  const cb=a[9].querySelector('.body');
+  Object.assign(content.contact,readKeyed(cb));
+}
+
+init();
+</script>
+</body>
+</html>
