@@ -928,6 +928,34 @@ document.getElementById('yr').textContent = new Date().getFullYear();
   });
 })();
 
+/* ---------- Visitor analytics: privacy-friendly pageview log ----------
+   No cookies, no cross-site tracking. Stores a first-party random visitor id
+   (so unique visitors can be counted), the referrer, and coarse city/country.
+   A daily Supabase cron then DMs you a summary. Fire-and-forget. */
+(function(){
+  const cfg=window.SUPABASE_CONFIG||{};
+  const ready=cfg.url&&cfg.url.indexOf('http')===0&&cfg.anonKey&&cfg.anonKey.indexOf('YOUR_')!==0;
+  if(!ready)return;
+  let vid;
+  try{
+    vid=localStorage.getItem('vid');
+    if(!vid){vid=(crypto&&crypto.randomUUID)?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2);localStorage.setItem('vid',vid);}
+  }catch(e){vid=null;}
+  (async()=>{
+    let city=null,country=null;
+    try{const c=new AbortController();const t=setTimeout(()=>c.abort(),1500);
+      const g=await fetch('https://ipwho.is/',{signal:c.signal}).then(r=>r.json());clearTimeout(t);
+      if(g&&g.success){city=g.city||null;country=g.country||null;}}catch(e){}
+    try{
+      fetch(cfg.url+'/rest/v1/pageviews',{
+        method:'POST',keepalive:true,
+        headers:{'apikey':cfg.anonKey,'Authorization':'Bearer '+cfg.anonKey,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify({path:location.pathname,referrer:document.referrer||null,city:city,country:country,visitor:vid})
+      }).catch(()=>{});
+    }catch(e){}
+  })();
+})();
+
 /* ---------- CMS layer: re-render editable sections from saved Supabase content ----------
    No saved content (or Supabase not configured) → the static HTML above is kept as-is,
    so the live site is unchanged until you start editing in /admin.html.
