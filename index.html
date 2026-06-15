@@ -283,19 +283,17 @@ footer a:hover{color:var(--accent)}
 .gate-top svg{width:18px;height:18px;stroke:var(--accent);fill:none;stroke-width:2}
 .gate-box h3{font-size:1.05rem;letter-spacing:-.01em}
 .gate-box .ghint{color:var(--muted);font-size:.85rem;margin-bottom:var(--s5)}
-.gate-display{height:52px;border-radius:var(--r-sm);border:1px solid var(--line-2);background:var(--bg);
-  display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:1.5rem;
-  letter-spacing:.4em;text-indent:.4em;color:var(--text);margin-bottom:var(--s4)}
-.gate-display.empty{color:var(--faint)}
-.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s2)}
-.key{padding:14px 0;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--panel-2);
-  color:var(--text);font-size:1.1rem;font-family:var(--mono);cursor:pointer;transition:border-color .12s,background .12s}
-.key:hover{border-color:var(--accent)}
-.key:active{background:var(--accent-weak)}
-.key.enter{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-.key.enter:hover{background:var(--accent-press)}
+.vlabel{display:block;font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+#gateForm input{width:100%;padding:12px 14px;border-radius:var(--r-sm);border:1px solid var(--line-2);
+  background:var(--bg);color:var(--text);font-family:var(--sans);font-size:1rem}
+#gateForm input::placeholder{color:var(--faint)}
+#gateForm input:focus{outline:none;border-color:var(--accent)}
+.gate-submit{width:100%;margin-top:var(--s4);padding:12px;border-radius:var(--r-sm);border:1px solid var(--accent);
+  background:var(--accent);color:var(--on-accent);font-family:var(--sans);font-weight:600;font-size:.95rem;
+  cursor:pointer;transition:background .15s}
+.gate-submit:hover{background:var(--accent-press)}
+.gate-submit:disabled{opacity:.7;cursor:default}
 .gate-msg{margin-top:var(--s4);min-height:1.1em;font-size:.84rem;color:var(--muted)}
-.gate-msg.deny{color:#e06a6a}
 .gate-msg.grant{color:var(--good);font-weight:600}
 .gate-cancel{margin-top:var(--s4);width:100%;color:var(--faint);font-size:.82rem;cursor:pointer;background:none;border:none;font-family:var(--sans)}
 .gate-cancel:hover{color:var(--text)}
@@ -711,31 +709,21 @@ footer a:hover{color:var(--accent)}
 <!-- Lightbox -->
 <div id="lb" role="dialog" aria-modal="true" aria-label="Project image"><button class="x" aria-label="Close">✕</button><img id="lbimg" src="" alt=""><div class="cap" id="lbcap"></div></div>
 
-<!-- Passcode gate (protected resume) -->
+<!-- Resume intro popup (captures a name, then opens the resume) -->
 <div id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-h">
   <div class="gate-box" id="gateBox">
     <div class="gate-top">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-      <h3 id="gate-h">Protected resume</h3>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5a1 1 0 0 1 1-1h11l4 4v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z"/><path d="M8 12h8M8 16h8M8 8h4"/></svg>
+      <h3 id="gate-h">Before you grab my resume</h3>
     </div>
-    <div class="ghint">My resume is shared on request. Enter the passcode I gave you to open it.</div>
-    <div class="gate-display empty" id="gateDisplay" aria-live="polite">•••</div>
-    <div class="keypad">
-      <button class="key" data-k="1">1</button>
-      <button class="key" data-k="2">2</button>
-      <button class="key" data-k="3">3</button>
-      <button class="key" data-k="4">4</button>
-      <button class="key" data-k="5">5</button>
-      <button class="key" data-k="6">6</button>
-      <button class="key" data-k="7">7</button>
-      <button class="key" data-k="8">8</button>
-      <button class="key" data-k="9">9</button>
-      <button class="key" data-k="del" aria-label="Delete">⌫</button>
-      <button class="key" data-k="0">0</button>
-      <button class="key enter" data-k="ok" aria-label="Submit">⏎</button>
-    </div>
+    <div class="ghint">A quick hello so I know who stopped by — you'll get the resume right after.</div>
+    <form id="gateForm" novalidate>
+      <label class="vlabel" for="visitorName">Your name</label>
+      <input id="visitorName" type="text" autocomplete="name" maxlength="80" placeholder="e.g. Jane Smith — Recruiter at Acme" required>
+      <button class="gate-submit" type="submit" id="gateSubmit">Open resume →</button>
+    </form>
     <div class="gate-msg" id="gateMsg" aria-live="polite"></div>
-    <button class="gate-cancel" id="gateCancel">Cancel</button>
+    <button class="gate-cancel" id="gateCancel">Maybe later</button>
   </div>
 </div>
 
@@ -820,42 +808,50 @@ document.getElementById('yr').textContent = new Date().getFullYear();
   document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
 })();
 
-/* ---------- Passcode gate for resume ---------- */
+/* ---------- Resume intro popup: capture a name, log the request, then open the resume ----------
+   Logs each request to Supabase (table `resume_requests`); a Supabase webhook then pings
+   your phone (see RESUME_ALERTS_SETUP.md). Access is instant — the visitor is never blocked,
+   even if logging is offline. */
 (function(){
-  const PASSCODE="404";
-  const gate=document.getElementById('gate'),box=document.getElementById('gateBox'),
-        display=document.getElementById('gateDisplay'),msg=document.getElementById('gateMsg'),cancel=document.getElementById('gateCancel');
-  let code="",target="",locked=false,lastFocus=null;
+  const cfg=window.SUPABASE_CONFIG||{};
+  const ready=cfg.url&&cfg.url.indexOf('http')===0&&cfg.anonKey&&cfg.anonKey.indexOf('YOUR_')!==0;
+  const gate=document.getElementById('gate'),form=document.getElementById('gateForm'),
+        input=document.getElementById('visitorName'),submit=document.getElementById('gateSubmit'),
+        msg=document.getElementById('gateMsg'),cancel=document.getElementById('gateCancel');
+  let target="",lastFocus=null,busy=false;
 
-  const render=()=>{const has=code.length>0;display.textContent=has?code.replace(/./g,'•'):"•••";display.classList.toggle('empty',!has);};
-  const open=url=>{target=url;code="";locked=false;msg.textContent="";msg.className="gate-msg";box.classList.remove('shake');render();
-    lastFocus=document.activeElement;gate.classList.add('open');cancel.focus();};
+  const open=url=>{target=url;input.value="";msg.textContent="";msg.className="gate-msg";busy=false;
+    submit.disabled=false;submit.textContent="Open resume →";
+    lastFocus=document.activeElement;gate.classList.add('open');setTimeout(()=>input.focus(),60);};
   const close=()=>{gate.classList.remove('open');if(lastFocus)lastFocus.focus();};
 
-  const check=()=>{
-    if(code===PASSCODE){locked=true;msg.className="gate-msg grant";msg.textContent="Unlocked — opening your resume…";
-      setTimeout(()=>{window.open(target,'_blank','noopener');close();},700);
-    }else{box.classList.add('shake');msg.className="gate-msg deny";
-      msg.textContent="That passcode didn't match. Need access? Email me at ashad.ak786@gmail.com.";
-      code="";render();setTimeout(()=>box.classList.remove('shake'),450);}
-  };
-  const input=k=>{if(locked)return;
-    if(k==='del'){code=code.slice(0,-1);render();return;}
-    if(k==='ok'){check();return;}
-    if(code.length>=6)return;
-    code+=k;render();};
+  /* best-effort log; never blocks or errors out the visitor */
+  function logRequest(name){
+    if(!ready)return;
+    try{
+      fetch(cfg.url+'/rest/v1/resume_requests',{
+        method:'POST',keepalive:true,
+        headers:{'apikey':cfg.anonKey,'Authorization':'Bearer '+cfg.anonKey,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify({name:name,page:location.pathname,referrer:document.referrer||null})
+      }).catch(()=>{});
+    }catch(e){}
+  }
 
+  form.addEventListener('submit',e=>{
+    e.preventDefault();
+    const name=input.value.trim();
+    if(!name){input.focus();return;}
+    if(busy)return;busy=true;submit.disabled=true;
+    logRequest(name);
+    /* open within the user gesture so it isn't popup-blocked */
+    const w=window.open(target,'_blank');
+    msg.className="gate-msg grant";msg.textContent="Thanks, "+name.split(/\s+/)[0]+" — opening the resume…";
+    setTimeout(()=>{if(!w)location.href=target;close();},900);
+  });
   document.querySelectorAll('a[href$=".pdf"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();open(a.getAttribute('href'));}));
-  document.querySelectorAll('.keypad .key').forEach(b=>b.addEventListener('click',()=>input(b.dataset.k)));
   cancel.addEventListener('click',close);
   gate.addEventListener('click',e=>{if(e.target===gate)close();});
-  document.addEventListener('keydown',e=>{
-    if(!gate.classList.contains('open'))return;
-    if(e.key>='0'&&e.key<='9')input(e.key);
-    else if(e.key==='Backspace'){e.preventDefault();input('del');}
-    else if(e.key==='Enter')input('ok');
-    else if(e.key==='Escape')close();
-  });
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&gate.classList.contains('open'))close();});
 })();
 
 /* ---------- CMS layer: re-render editable sections from saved Supabase content ----------
