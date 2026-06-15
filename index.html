@@ -757,6 +757,28 @@ footer a:hover{color:var(--accent)}
 document.documentElement.classList.add('js');
 document.getElementById('yr').textContent = new Date().getFullYear();
 
+/* ---------- Shared coarse geo (city/country), cached, with fallback provider ----------
+   Used by analytics + resume/contact alerts. One lookup per page load. */
+let __geoPromise;
+function getGeo(){
+  if(__geoPromise)return __geoPromise;
+  __geoPromise=(async()=>{
+    const tryOne=async(url,map)=>{
+      try{
+        const c=new AbortController();const t=setTimeout(()=>c.abort(),2500);
+        const r=await fetch(url,{signal:c.signal});const j=await r.json();clearTimeout(t);
+        const g=map(j);
+        if(g&&g.country)return{city:g.city||null,country:g.country};
+      }catch(e){}
+      return null;
+    };
+    return (await tryOne('https://ipwho.is/',j=>j&&j.success?{city:j.city,country:j.country}:null))
+        || (await tryOne('https://get.geojs.io/v1/ip/geo.json',j=>j&&j.country?{city:j.city,country:j.country}:null))
+        || {city:null,country:null};
+  })();
+  return __geoPromise;
+}
+
 /* ---------- Theme ---------- */
 (function(){
   const btn=document.getElementById('themeBtn');
@@ -847,19 +869,10 @@ document.getElementById('yr').textContent = new Date().getFullYear();
   const close=()=>{gate.classList.remove('open');if(lastFocus)lastFocus.focus();};
 
   /* best-effort log; never blocks or errors out the visitor.
-     Adds rough city/country from a free, key-less IP lookup (short timeout). */
-  async function geo(){
-    try{
-      const c=new AbortController();const t=setTimeout(()=>c.abort(),1500);
-      const g=await fetch('https://ipwho.is/',{signal:c.signal}).then(r=>r.json());
-      clearTimeout(t);
-      if(g&&g.success)return{city:g.city||null,country:g.country||null};
-    }catch(e){}
-    return{city:null,country:null};
-  }
+     Adds rough city/country from the shared geo helper. */
   async function logRequest(name){
     if(!ready)return;
-    const {city,country}=await geo();
+    const {city,country}=await getGeo();
     try{
       fetch(cfg.url+'/rest/v1/resume_requests',{
         method:'POST',keepalive:true,
@@ -942,10 +955,7 @@ document.getElementById('yr').textContent = new Date().getFullYear();
     if(!vid){vid=(crypto&&crypto.randomUUID)?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2);localStorage.setItem('vid',vid);}
   }catch(e){vid=null;}
   (async()=>{
-    let city=null,country=null;
-    try{const c=new AbortController();const t=setTimeout(()=>c.abort(),1500);
-      const g=await fetch('https://ipwho.is/',{signal:c.signal}).then(r=>r.json());clearTimeout(t);
-      if(g&&g.success){city=g.city||null;country=g.country||null;}}catch(e){}
+    const {city,country}=await getGeo();
     try{
       fetch(cfg.url+'/rest/v1/pageviews',{
         method:'POST',keepalive:true,
