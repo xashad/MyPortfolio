@@ -270,7 +270,7 @@ footer{padding:var(--s6) 0;color:var(--faint);font-size:.82rem;border-top:1px so
 footer a:hover{color:var(--accent)}
 
 /* ============================================================
-   Passcode gate (protected résumé)
+   Passcode gate (protected resume)
    ============================================================ */
 #gate{position:fixed;inset:0;z-index:150;background:rgba(5,7,12,.82);backdrop-filter:blur(6px);
   display:none;align-items:center;justify-content:center;padding:var(--s5)}
@@ -367,7 +367,7 @@ footer a:hover{color:var(--accent)}
   <p class="sub">MSc Artificial Intelligence at Milano-Bicocca. I pair strong <strong>computer-vision and deep-learning</strong> models with <strong>explainability</strong>, so every prediction comes with the reason behind it. Currently building <strong>Lagani</strong>, an explainable stock-risk platform for Nepal's NEPSE market.</p>
   <div class="cta">
     <a class="btn primary" href="#projects">View projects <span class="arw">→</span></a>
-    <a class="btn" href="Mohammad_Ashad_Khan_Resume.pdf">Résumé</a>
+    <a class="btn" href="Mohammad_Ashad_Khan_Resume.pdf">Resume</a>
     <a class="btn" href="https://github.com/xashad" target="_blank" rel="noopener">GitHub</a>
   </div>
   <div class="meta">
@@ -695,7 +695,7 @@ footer a:hover{color:var(--accent)}
         <a class="btn primary" href="mailto:ashad.ak786@gmail.com">Email me</a>
         <a class="btn" href="https://linkedin.com/in/xashad" target="_blank" rel="noopener">LinkedIn</a>
         <a class="btn" href="https://github.com/xashad" target="_blank" rel="noopener">GitHub</a>
-        <a class="btn" href="Mohammad_Ashad_Khan_Resume.pdf">Résumé</a>
+        <a class="btn" href="Mohammad_Ashad_Khan_Resume.pdf">Resume</a>
       </div>
     </div>
   </div>
@@ -711,14 +711,14 @@ footer a:hover{color:var(--accent)}
 <!-- Lightbox -->
 <div id="lb" role="dialog" aria-modal="true" aria-label="Project image"><button class="x" aria-label="Close">✕</button><img id="lbimg" src="" alt=""><div class="cap" id="lbcap"></div></div>
 
-<!-- Passcode gate (protected résumé) -->
+<!-- Passcode gate (protected resume) -->
 <div id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-h">
   <div class="gate-box" id="gateBox">
     <div class="gate-top">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-      <h3 id="gate-h">Protected résumé</h3>
+      <h3 id="gate-h">Protected resume</h3>
     </div>
-    <div class="ghint">My résumé is shared on request. Enter the passcode I gave you to open it.</div>
+    <div class="ghint">My resume is shared on request. Enter the passcode I gave you to open it.</div>
     <div class="gate-display empty" id="gateDisplay" aria-live="polite">•••</div>
     <div class="keypad">
       <button class="key" data-k="1">1</button>
@@ -820,7 +820,7 @@ document.getElementById('yr').textContent = new Date().getFullYear();
   document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
 })();
 
-/* ---------- Passcode gate for résumé ---------- */
+/* ---------- Passcode gate for resume ---------- */
 (function(){
   const PASSCODE="404";
   const gate=document.getElementById('gate'),box=document.getElementById('gateBox'),
@@ -833,7 +833,7 @@ document.getElementById('yr').textContent = new Date().getFullYear();
   const close=()=>{gate.classList.remove('open');if(lastFocus)lastFocus.focus();};
 
   const check=()=>{
-    if(code===PASSCODE){locked=true;msg.className="gate-msg grant";msg.textContent="Unlocked — opening your résumé…";
+    if(code===PASSCODE){locked=true;msg.className="gate-msg grant";msg.textContent="Unlocked — opening your resume…";
       setTimeout(()=>{window.open(target,'_blank','noopener');close();},700);
     }else{box.classList.add('shake');msg.className="gate-msg deny";
       msg.textContent="That passcode didn't match. Need access? Email me at ashad.ak786@gmail.com.";
