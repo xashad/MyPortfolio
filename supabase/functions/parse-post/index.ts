@@ -7,7 +7,7 @@
 //   2. supabase secrets set GEMINI_API_KEY=<your key> --project-ref evjiqgmeatkzmmufliyw
 // SUPABASE_URL / SUPABASE_ANON_KEY are injected by the platform automatically.
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 // Swap this if Google renames the free vision model (e.g. gemini-2.5-flash).
 const MODEL = "gemini-2.0-flash";
@@ -78,8 +78,12 @@ Deno.serve(async (req) => {
     };
 
     const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
-      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify(body),
+      },
     );
     const out = await r.json();
     if (!r.ok) return json({ error: "Gemini request failed.", detail: out }, 502);
