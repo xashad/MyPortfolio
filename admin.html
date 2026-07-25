@@ -73,6 +73,13 @@ label{display:block;font-size:.74rem;font-weight:600;color:var(--muted);margin:0
 .qa .qa-head{display:flex;align-items:center;gap:9px;font-weight:700;font-size:.98rem}
 .qa .qa-head .li{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;background:var(--accent);color:#fff;font-family:var(--mono);font-weight:700;font-size:.72rem}
 .qa .row{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
+.drop{border:1.5px dashed var(--line-2);border-radius:9px;padding:18px;text-align:center;cursor:pointer;
+  color:var(--muted);font-size:.86rem;background:var(--bg);transition:.15s}
+.drop:hover{border-color:var(--accent);color:var(--text)}
+.drop.over{border-color:var(--accent);background:rgba(76,141,255,.08);color:var(--text)}
+.drop.busy{opacity:.7;pointer-events:none}
+.drop .big{display:block;font-weight:600;color:var(--text);margin-bottom:2px}
+.drop img.thumb{max-height:120px;border-radius:6px;margin-top:8px;border:1px solid var(--line)}
 </style>
 </head>
 <body>
@@ -366,13 +373,24 @@ function quickAdd(){
   box.lastChild.className='body';
   box.lastChild.innerHTML=`
     <div class="qa-head"><span class="li">in</span> Add a project from LinkedIn</div>
-    <div class="hint" style="margin:6px 0 16px">Posted a project on LinkedIn? Paste the post link and a few details — it becomes a card in your Projects section instantly.</div>
-    <div class="field"><label>LinkedIn post URL *</label><input id="qaUrl" type="text" placeholder="https://www.linkedin.com/posts/xashad_…"></div>
+    <div class="hint" style="margin:6px 0 14px">Drop a <b>screenshot of your LinkedIn post</b> and the fields fill in automatically. Then add the post URL and publish.</div>
+    <div class="field">
+      <label>Screenshot of the post — auto-fills everything below</label>
+      <div id="qaDrop" class="drop">
+        <input id="qaShot" type="file" accept="image/*" hidden>
+        <span id="qaDropText"><span class="big">Click to choose a screenshot</span>or drag &amp; drop it here — the AI reads the project details for you</span>
+      </div>
+      <div class="hint">Your own screenshot is read by a vision AI (via your Supabase function). Nothing is posted anywhere — you review before publishing.</div>
+    </div>
+    <div class="field"><label>LinkedIn post URL *</label><input id="qaUrl" type="text" placeholder="https://www.linkedin.com/posts/xashad_…">
+      <div class="hint">Paste the link to the post (a screenshot can't include its own URL) — it becomes the “↗ LinkedIn” link on the card.</div></div>
     <div class="grid2">
       <div class="field"><label>Project name *</label><input id="qaName" type="text" placeholder="e.g. Lagani v2"></div>
       <div class="field"><label>Badge / flag</label><input id="qaFlag" type="text" placeholder="e.g. Machine Learning · XAI"></div>
     </div>
     <div class="field"><label>One-line description</label><input id="qaDesc" type="text" placeholder="Short tagline shown under the title"></div>
+    <div class="field"><label>Key points</label><textarea id="qaPoints" rows="3" placeholder="One highlight per line (optional)"></textarea>
+      <div class="hint">One bullet per line. Basic inline HTML allowed.</div></div>
     <div class="grid2">
       <div class="field"><label>Categories</label><input id="qaCats" type="text" value="web">
         <div class="hint">Comma-separated. Use <b>xai</b>, <b>cv</b> and/or <b>web</b> so the filter buttons pick it up.</div></div>
@@ -393,6 +411,13 @@ function bindQuickAdd(){
   $('#qaAdd').onclick=()=>qaAdd(false);
   $('#qaAddPublish').onclick=()=>qaAdd(true);
   $('#qaUrl').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();qaAdd(true);}});
+  /* screenshot -> AI autofill */
+  const drop=$('#qaDrop'),input=$('#qaShot');
+  drop.onclick=()=>input.click();
+  input.onchange=()=>{if(input.files&&input.files[0])readShot(input.files[0]);};
+  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
+  drop.addEventListener('drop',e=>{const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(f)readShot(f);});
 }
 function qaProject(){
   const csv=s=>s.split(',').map(x=>x.trim()).filter(Boolean);
@@ -402,8 +427,49 @@ function qaProject(){
   const links=[{label:'↗ LinkedIn',url,soon:false}];
   const exUrl=$('#qaLinkUrl').value.trim();
   if(exUrl)links.push({label:$('#qaLinkLabel').value.trim()||'↗ Code',url:exUrl,soon:false});
+  const points=$('#qaPoints').value.split('\n').map(s=>s.trim()).filter(Boolean);
   return {name,flag:$('#qaFlag').value.trim(),tagline:$('#qaDesc').value.trim(),
-    cats:csv($('#qaCats').value),points:[],tech:csv($('#qaTech').value),metrics:[],links};
+    cats:csv($('#qaCats').value),points,tech:csv($('#qaTech').value),metrics:[],links};
+}
+/* Downscale + re-encode the screenshot client-side so uploads stay small/fast. */
+function fileToScaledB64(file){
+  return new Promise((res,rej)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=1400;let w=img.naturalWidth,h=img.naturalHeight;
+      if(w>max){h=Math.round(h*max/w);w=max;}
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(img.src);
+      res({b64:cv.toDataURL('image/jpeg',0.85).split(',')[1],mime:'image/jpeg',preview:cv.toDataURL('image/jpeg',0.6)});
+    };
+    img.onerror=()=>rej(new Error('Could not read that image file.'));
+    img.src=URL.createObjectURL(file);
+  });
+}
+async function readShot(file){
+  if(!file.type||file.type.indexOf('image/')!==0){toast('Please choose an image file.');return;}
+  const drop=$('#qaDrop'),txt=$('#qaDropText');
+  drop.classList.add('busy');const prev=txt.innerHTML;txt.innerHTML='<span class="big">Reading screenshot…</span>the AI is extracting the project details';
+  try{
+    const {b64,mime,preview}=await fileToScaledB64(file);
+    const {data,error}=await sb.functions.invoke('parse-post',{body:{image:b64,mime}});
+    if(error)throw new Error(error.message||'function error');
+    if(data&&data.error)throw new Error(typeof data.error==='string'?data.error:JSON.stringify(data.error));
+    const p=(data&&data.project)||{};
+    if(p.name)$('#qaName').value=p.name;
+    if(p.flag)$('#qaFlag').value=p.flag;
+    if(p.tagline)$('#qaDesc').value=p.tagline;
+    if(Array.isArray(p.cats)&&p.cats.length)$('#qaCats').value=p.cats.join(', ');
+    if(Array.isArray(p.tech)&&p.tech.length)$('#qaTech').value=p.tech.join(', ');
+    if(Array.isArray(p.points)&&p.points.length)$('#qaPoints').value=p.points.join('\n');
+    txt.innerHTML='<span class="big">✓ Read — review the fields below</span>add the post URL, then publish'+
+      (preview?`<br><img class="thumb" src="${preview}" alt="">`:'');
+    toast('Screenshot read — review, add the post URL, then publish.');
+  }catch(e){
+    txt.innerHTML=prev;
+    toast('Could not read screenshot: '+e.message);
+  }finally{drop.classList.remove('busy');}
 }
 async function qaAdd(publishNow){
   const p=qaProject();if(!p)return;
