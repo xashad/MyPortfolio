@@ -69,6 +69,10 @@ label{display:block;font-size:.74rem;font-weight:600;color:var(--muted);margin:0
   padding:12px 20px;display:flex;justify-content:flex-end;gap:12px;z-index:30}
 .savebar .left{margin-right:auto;color:var(--faint);font-size:.82rem;align-self:center;font-family:var(--mono)}
 .hidden{display:none}
+.qa{background:linear-gradient(180deg,rgba(76,141,255,.06),transparent);border:1px solid var(--accent);border-radius:var(--r);margin-bottom:20px}
+.qa .qa-head{display:flex;align-items:center;gap:9px;font-weight:700;font-size:.98rem}
+.qa .qa-head .li{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;background:var(--accent);color:#fff;font-family:var(--mono);font-weight:700;font-size:.72rem}
+.qa .row{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -145,10 +149,14 @@ async function load(){
   $('#status').textContent=saved?'Loaded saved content.':'No saved content yet — showing the current site. Save to publish.';
 }
 function merge(d){const def=clone(window.DEFAULT_CONTENT),out=clone(d);for(const k in def)if(out[k]==null)out[k]=def[k];return out;}
+async function publish(){
+  const {error}=await sb.from('site_content').upsert({id:'main',data:content,updated_at:new Date().toISOString()});
+  return error;
+}
 $('#saveBtn').onclick=async()=>{
   collect();
   $('#saveBtn').disabled=true;$('#saveBtn').textContent='Saving…';
-  const {error}=await sb.from('site_content').upsert({id:'main',data:content,updated_at:new Date().toISOString()});
+  const error=await publish();
   $('#saveBtn').disabled=false;$('#saveBtn').textContent='Save & publish';
   if(error){toast('Save failed: '+error.message);return;}
   toast('Saved & published ✓');$('#status').textContent='Last saved just now.';
@@ -208,6 +216,10 @@ const RICH='Basic inline HTML allowed (e.g. <strong>, <em>).';
 
 function build(){
   const root=$('#forms');root.innerHTML='';const c=content;
+
+  /* ★ QUICK ADD FROM LINKEDIN (not an .acc — kept out of collect()'s indexing) */
+  root.appendChild(quickAdd());
+  bindQuickAdd();
 
   /* 0 HERO */
   root.appendChild(section('Hero','',body=>{
@@ -343,6 +355,70 @@ function w_link(l,lw){
   lw.appendChild(field('Label',l.label,{key:'label',hint:'Tip: keep the “↗ ” prefix, e.g. “↗ Code”.'}));
   lw.appendChild(field('URL',l.url,{key:'url'}));
   lw.appendChild(checkbox('“Soon” style (muted, not a real link)',l.soon,'soon'));
+}
+
+/* ============================================================
+   Quick add: turn a LinkedIn post into a project card
+   ============================================================ */
+function quickAdd(){
+  const box=el('div','qa');
+  box.appendChild(el('div',null,''));
+  box.lastChild.className='body';
+  box.lastChild.innerHTML=`
+    <div class="qa-head"><span class="li">in</span> Add a project from LinkedIn</div>
+    <div class="hint" style="margin:6px 0 16px">Posted a project on LinkedIn? Paste the post link and a few details — it becomes a card in your Projects section instantly.</div>
+    <div class="field"><label>LinkedIn post URL *</label><input id="qaUrl" type="text" placeholder="https://www.linkedin.com/posts/xashad_…"></div>
+    <div class="grid2">
+      <div class="field"><label>Project name *</label><input id="qaName" type="text" placeholder="e.g. Lagani v2"></div>
+      <div class="field"><label>Badge / flag</label><input id="qaFlag" type="text" placeholder="e.g. Machine Learning · XAI"></div>
+    </div>
+    <div class="field"><label>One-line description</label><input id="qaDesc" type="text" placeholder="Short tagline shown under the title"></div>
+    <div class="grid2">
+      <div class="field"><label>Categories</label><input id="qaCats" type="text" value="web">
+        <div class="hint">Comma-separated. Use <b>xai</b>, <b>cv</b> and/or <b>web</b> so the filter buttons pick it up.</div></div>
+      <div class="field"><label>Tech tags</label><input id="qaTech" type="text" placeholder="Python, PyTorch, React">
+        <div class="hint">Comma-separated (optional).</div></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Extra link URL (optional)</label><input id="qaLinkUrl" type="text" placeholder="https://github.com/xashad/…"></div>
+      <div class="field"><label>Extra link label</label><input id="qaLinkLabel" type="text" placeholder="↗ Code"></div>
+    </div>
+    <div class="row">
+      <button class="primary" id="qaAddPublish">Add &amp; publish now</button>
+      <button id="qaAdd">Add to list for editing</button>
+    </div>`;
+  return box;
+}
+function bindQuickAdd(){
+  $('#qaAdd').onclick=()=>qaAdd(false);
+  $('#qaAddPublish').onclick=()=>qaAdd(true);
+  $('#qaUrl').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();qaAdd(true);}});
+}
+function qaProject(){
+  const csv=s=>s.split(',').map(x=>x.trim()).filter(Boolean);
+  const url=$('#qaUrl').value.trim(), name=$('#qaName').value.trim();
+  if(!name||!url){toast('Add at least a project name and the LinkedIn URL.');return null;}
+  if(!/^https?:\/\//i.test(url)){toast('The LinkedIn URL should start with http(s)://');return null;}
+  const links=[{label:'↗ LinkedIn',url,soon:false}];
+  const exUrl=$('#qaLinkUrl').value.trim();
+  if(exUrl)links.push({label:$('#qaLinkLabel').value.trim()||'↗ Code',url:exUrl,soon:false});
+  return {name,flag:$('#qaFlag').value.trim(),tagline:$('#qaDesc').value.trim(),
+    cats:csv($('#qaCats').value),points:[],tech:csv($('#qaTech').value),metrics:[],links};
+}
+async function qaAdd(publishNow){
+  const p=qaProject();if(!p)return;
+  collect();                       // capture any in-progress edits from the accordions first
+  content.projects.unshift(p);     // newest project shows right after the featured Lagani card
+  if(publishNow){
+    const b=$('#qaAddPublish');b.disabled=true;b.textContent='Publishing…';
+    const error=await publish();
+    if(error){content.projects.shift();b.disabled=false;b.textContent='Add & publish now';toast('Publish failed: '+error.message);return;}
+    $('#status').textContent='Last saved just now.';
+  }
+  build();                         // re-render: clears the quick-add form and shows the new card
+  const acc=$('#forms').querySelectorAll(':scope > .acc')[4]; // Projects section
+  if(acc){acc.open=true;acc.scrollIntoView({behavior:'smooth',block:'start'});}
+  toast(publishNow?'Added & published ✓':'Added below — review, then “Save & publish”.');
 }
 
 /* ============================================================
